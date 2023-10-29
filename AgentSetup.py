@@ -15,38 +15,26 @@ class Student(mesa.Agent):
 
   def __init__(self, unique_id, model,schedule_df):
     super().__init__(unique_id, model)
-    #print(f"DEBUG: Passed schedule: {schedule_df}")  # Debug print
     self.course_schedule = schedule_df
-    #print(f"DEBUG: Self schedule: {self.course_schedule}")  # Debug print
-
-    #self.course_schedule = schedule_df
     self.assign_courses()
     self.room = 0  # No room assigned initially
-    print("I am student ", unique_id, " and I take courses: ", self.courses)
+    # print("I am student ", unique_id, " and I take courses: ", self.courses)
 
   def assign_courses(self):
-      # Assuming the course names are strings like 'Course 1', 'Course 2', etc.
-      #all_courses = ['Course 1', 'Course 2', 'Course 3', 'Course 4', 'Course 5', 'Course 6']
       all_courses = [1,2,3,4,5,6,7,8]
       self.courses = random.sample(all_courses, 5)  # Randomly select 5 courses
 
 
   def step(self):
     current_time = self.model.schedule.time  # Assuming there's a time attribute in model's schedule
-    #print(current_time)
-      # Check if there's a course at this time
     for course in self.courses:
-      #pdb.set_trace()
       course_times = self.course_schedule[(self.course_schedule['Course'] == course) & (self.course_schedule['Time'] == current_time)]
-      #print([(self.course_schedule['Course'] == course) & (self.course_schedule['Time'] == current_time)])
-      #if not course_times.empty:
       course_at_this_time = course_times[course_times['Time'] == current_time]
       if not course_at_this_time.empty:
-        #print(course_at_this_time)
-        #pdb.set_trace()
         self.room = course_at_this_time.iloc[0]['Room']  # Update room
-        #print(self.room)
         break  # Exit the loop if a course is found at this time
+      else:
+        self.room = 0
 
 
 
@@ -60,9 +48,7 @@ class school(mesa.Model):
     self.schedule= RandomActivation(self)
     self.datacollector = DataCollector(
             agent_reporters={"info": "room"} )
-    #self.student=Student()
     self.schedule_df = self.generate_schedule()
-    #print(f"DEBUG: Schedule in model: {self.schedule_df}")
     for i in range(self.num_agents):
       agent = Student(i, self,self.schedule_df)
       self.schedule.add(agent)
@@ -70,7 +56,7 @@ class school(mesa.Model):
   def step(self):
         self.datacollector.collect(self)  # This collects the data each step
         self.schedule.step()
-        print("time",self.schedule.time )
+        # print("time",self.schedule.time )
 
 
   def generate_schedule(self):
@@ -86,7 +72,6 @@ class school(mesa.Model):
     # Generate data
     data = []
     for course_num in range(1, NUM_COURSES + 1):
-        #course_name = f"Course {course_num}"
         course_name = course_num
         for _ in range(LECTURES_PER_COURSE):
             # Randomly select a day (0: Monday, 4: Friday)
@@ -99,7 +84,6 @@ class school(mesa.Model):
             time = day * HOURS + hour
 
             # Randomly assign a room
-            #room = f"room{random.randint(1, NUM_ROOMS)}"
             room = random.randint(1, NUM_ROOMS)
 
             data.append((course_name, time, room))
@@ -112,7 +96,6 @@ class school(mesa.Model):
 
     # Reset index after sorting
     schedule_df.reset_index(drop=True, inplace=True)
-    print(schedule_df)
     return schedule_df
 
 
