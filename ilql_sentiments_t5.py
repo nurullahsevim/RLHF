@@ -6,6 +6,7 @@ from typing import Dict, List
 import numpy as np
 from datasets import load_dataset
 from transformers import AutoTokenizer, pipeline
+from model import RegressionModel
 
 import trlx
 from trlx.data.configs import (
@@ -26,7 +27,7 @@ def get_positive_score(scores):
 
 default_config = TRLConfig(
     train=TrainConfig(
-        seq_length=128,
+        seq_length=512,
         epochs=100,
         total_steps=1000,
         batch_size=32,
@@ -39,7 +40,7 @@ default_config = TRLConfig(
     model=ModelConfig(
         model_path="lvwerra/t5-imdb",
         num_layers_unfrozen=-1,
-        model_arch_type="seq2seq",
+        model_arch_type="causal",
     ),
     tokenizer=TokenizerConfig(
         tokenizer_path="lvwerra/t5-imdb",

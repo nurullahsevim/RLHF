@@ -6,6 +6,8 @@ import random
 import re
 import numpy as np
 from transformers import AutoTokenizer
+import torch
+from torch.utils.data import Dataset
 
 
 
@@ -96,5 +98,24 @@ def generative_dataset():
     # print(friday)
 
     prompt_string = "Predict the number of students in each room in Friday based on the information provided below:\nCourse Schedules:\n"+schedule_df.to_string(index=False)+"\nNumber of students in each class at given time before Friday (0 if not specified):\n"+density
+    print(prompt_string)
+    return {"prompt":prompt_string,"label":friday.flatten()}
 
-    yield {"promp":prompt_string,"label":friday.flatten()}
+def generate_data(N):
+    dataset = []
+    for i in range(N):
+        print(f"Generating {i}")
+        dataset.append(generative_dataset())
+    return dataset
+
+class MyDataset(Dataset):
+    def __init__(self, N):
+        self.dataset = generate_data(N)
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, idx):
+        prompt = self.dataset[idx]["prompt"]
+        label = self.dataset[idx]["label"]
+        return prompt, label
