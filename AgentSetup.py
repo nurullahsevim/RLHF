@@ -28,8 +28,8 @@ class Student(mesa.Agent):
   def step(self):
     current_time = self.model.schedule.time  # Assuming there's a time attribute in model's schedule
     for course in self.courses:
-      course_times = self.course_schedule[(self.course_schedule['Course'] == course) & (self.course_schedule['Time'] == current_time)]
-      course_at_this_time = course_times[course_times['Time'] == current_time]
+      course_times = self.course_schedule[(self.course_schedule['Course'] == course) & (self.course_schedule['Time'] == current_time+1)]
+      course_at_this_time = course_times[course_times['Time'] == current_time+1]
       if not course_at_this_time.empty:
         self.room = course_at_this_time.iloc[0]['Room']  # Update room
         break  # Exit the loop if a course is found at this time
@@ -54,8 +54,8 @@ class school(mesa.Model):
       self.schedule.add(agent)
     self.running = True
   def step(self):
-        self.datacollector.collect(self)  # This collects the data each step
         self.schedule.step()
+        self.datacollector.collect(self)  # This collects the data each step
         # print("time",self.schedule.time )
 
 

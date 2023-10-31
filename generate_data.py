@@ -98,7 +98,7 @@ def generative_dataset():
     # print(friday)
 
     prompt_string = "Predict the number of students in each room in Friday based on the information provided below:\nCourse Schedules:\n"+schedule_df.to_string(index=False)+"\nNumber of students in each class at given time before Friday (0 if not specified):\n"+density
-    print(prompt_string)
+    # print(prompt_string)
     return {"prompt":prompt_string,"label":friday.flatten()}
 
 def generate_data(N):
@@ -119,3 +119,7 @@ class MyDataset(Dataset):
         prompt = self.dataset[idx]["prompt"]
         label = self.dataset[idx]["label"]
         return prompt, label
+
+if __name__ == "__main__":
+    dataset = MyDataset(1)
+    print(dataset[0][0])
