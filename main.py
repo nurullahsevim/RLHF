@@ -34,9 +34,10 @@ if __name__ == '__main__':
 
 
     optimizer = AdamW(model.parameters(), lr=1e-5)
-
+    tol = 0.01
+    last_dif = 10
     # Training loop
-    for epoch in range(100):
+    for epoch in range(150):
         model.train()
         total_loss = 0
         for batch in train_dataloader:

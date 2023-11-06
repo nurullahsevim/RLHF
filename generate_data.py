@@ -121,5 +121,7 @@ class MyDataset(Dataset):
         return prompt, label
 
 if __name__ == "__main__":
-    dataset = MyDataset(1)
-    print(dataset[0][0])
+    dataset = MyDataset(1000)
+    torch.save(dataset, "train.pt")
+    dataset = MyDataset(100)
+    torch.save(dataset, "test.pt")

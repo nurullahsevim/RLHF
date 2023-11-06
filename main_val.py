@@ -31,7 +31,7 @@ if __name__ == '__main__':
     model.load_state_dict(state_dict)
     model = model.to(device)
 
-    val_data = torch.load('val.pt')
+    val_data = torch.load('test.pt')
     val_sampler = RandomSampler(val_data)
     val_dataloader = DataLoader(val_data, sampler=val_sampler, batch_size=1)
 
@@ -47,5 +47,5 @@ if __name__ == '__main__':
             outputs = model(input_ids, attention_masks)
             outputs_np = outputs.cpu().detach().numpy()
             outputs_np = np.array(outputs_np).astype(int)
-            print(str(prompts).replace('\n','\n'))
+            print(prompts[0])
             print(outputs_np.reshape(24,8))
