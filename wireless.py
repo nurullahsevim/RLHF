@@ -50,6 +50,7 @@ class LOS_Env:
         self.initialize_receivers()
 
     def initialize_receivers(self):
+        
         self.receivers = []
         for i in range(self.n_receivers):
             rc_loc = np.random.uniform(low=-500, high=500, size=(3,))
