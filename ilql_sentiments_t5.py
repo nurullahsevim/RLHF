@@ -1,6 +1,6 @@
 import os
 import sys
-sys.path.insert(1, '/home/nurullah/Research/RLHF/trlx')
+sys.path.insert(1, '/home/nurullahsevim/Research/RLHF/trlx')
 from typing import Dict, List
 
 import numpy as np
