@@ -50,7 +50,7 @@ class LOS_Env:
         self.initialize_receivers()
 
     def initialize_receivers(self):
-        
+
         self.receivers = []
         for i in range(self.n_receivers):
             rc_loc = np.random.uniform(low=-500, high=500, size=(3,))
@@ -88,5 +88,9 @@ class LOS_Env:
 
 if __name__ == '__main__':
     env = LOS_Env(16)
+    env.visualize()
+    tr_loc = np.random.uniform(low=-500, high=500, size=(3,))  # randomly choosing a location for transmitter
+    tr_loc[-1] = 50  # the height of the transmitter will be fixed for now
+    env.initialize_transmitter(tr_loc,8e9,50,25)
     env.visualize()
 
