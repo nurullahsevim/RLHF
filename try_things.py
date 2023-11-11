@@ -15,17 +15,9 @@ from transformers import pipeline, set_seed
 import transformers
 from transformers import LlamaTokenizer, LlamaForCausalLM
 from transformers import AutoModelForQuestionAnswering, AutoTokenizer, pipeline
+from trlx.examples.randomwalks import generate_random_walks
 
 
 if __name__ == '__main__':
-    train_data = torch.load('train.pt')
-    tokenizer = T5Tokenizer.from_pretrained("google/flan-t5-large")
-    model = T5ForConditionalGeneration.from_pretrained("google/flan-t5-large", device_map="auto",
-                                                       torch_dtype=torch.float16,max_length=512)
-
-    input_text = "What is the BER for flat Rayleigh fading with QPSK?"
-    print(input_text)
-    input_ids = tokenizer(input_text, return_tensors="pt").input_ids.to("cuda")
-
-    outputs = model.generate(input_ids)
-    print(tokenizer.decode(outputs[0]))
+    metric_fn, eval_prompts, sample_walks, logit_mask = generate_random_walks(42)
+    pass

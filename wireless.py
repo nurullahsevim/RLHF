@@ -56,6 +56,12 @@ class LOS_Env:
             rc_loc = np.random.uniform(low=-500, high=500, size=(3,))
             rc_loc[-1] = 0
             self.receivers.append(Receiver(rc_loc))
+
+    def get_receiver_loc(self):
+        locations = np.zeros((self.n_receivers,3))
+        for i in range(self.n_receivers):
+            locations[i,:] = self.receivers[i].loc
+        return locations
     def initialize_transmitter(self,loc,fc,Pt,Ga):
         self.transmitter = Transmitter(loc,fc,Pt,Ga)
     def get_distance(self):

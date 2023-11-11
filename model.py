@@ -15,3 +15,8 @@ class RegressionModel(nn.Module):
         last_hidden_states = outputs.last_hidden_state
         pooled_output = last_hidden_states[:, 0, :]  # Taking the [CLS] token's representation
         return self.regression_head(pooled_output)
+
+if __name__ == '__main__':
+    model = RegressionModel('mistralai/Mistral-7B-v0.1',2)
+    input = "Give two random numbers."
+    output = model(input)
