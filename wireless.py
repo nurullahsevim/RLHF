@@ -18,6 +18,7 @@ class Transmitter:
         self.transmit_power = Pt
         self.antenna_gain = Ga
 
+
     def get_eirp(self):
         """
         Returns the Effective Isotropic Radiated Power (EIRP)
