@@ -1,0 +1,35 @@
+[RANK 0] Starting training
+[RANK 0] Collecting rollouts
+You're using a GPT2TokenizerFast tokenizer. Please note that with a fast tokenizer, using the `__call__` method is faster than using a method to encode the text followed by a call to the `pad` method to get a padded encoding.
+Traceback (most recent call last):
+  File "/home/nurullah/Research/RLHF/ppo_wireless.py", line 86, in <module>
+    main(hparams)
+  File "/home/nurullah/Research/RLHF/ppo_wireless.py", line 72, in main
+    trlx.train(
+  File "/home/nurullah/Research/RLHF/trlx/trlx/trlx.py", line 142, in train
+    trainer.learn()
+  File "/home/nurullah/Research/RLHF/trlx/trlx/trainer/accelerate_base_trainer.py", line 524, in learn
+    self.prepare_learning()
+  File "/home/nurullah/Research/RLHF/trlx/trlx/trainer/accelerate_ppo_trainer.py", line 237, in prepare_learning
+    self.make_experience(self.config.method.num_rollouts)
+  File "/home/nurullah/Research/RLHF/trlx/trlx/trainer/accelerate_ppo_trainer.py", line 311, in make_experience
+    all_scores = self.reward_fn(
+  File "/home/nurullah/Research/RLHF/ppo_wireless.py", line 74, in <lambda>
+    reward_fn=lambda samples, **kwargs: rwrd_fn(env, samples, **kwargs),
+TypeError: rwrd_fn() got an unexpected keyword argument 'prompts'
+Traceback (most recent call last):
+  File "/home/nurullah/Research/RLHF/ppo_wireless.py", line 86, in <module>
+    main(hparams)
+  File "/home/nurullah/Research/RLHF/ppo_wireless.py", line 72, in main
+    trlx.train(
+  File "/home/nurullah/Research/RLHF/trlx/trlx/trlx.py", line 142, in train
+    trainer.learn()
+  File "/home/nurullah/Research/RLHF/trlx/trlx/trainer/accelerate_base_trainer.py", line 524, in learn
+    self.prepare_learning()
+  File "/home/nurullah/Research/RLHF/trlx/trlx/trainer/accelerate_ppo_trainer.py", line 237, in prepare_learning
+    self.make_experience(self.config.method.num_rollouts)
+  File "/home/nurullah/Research/RLHF/trlx/trlx/trainer/accelerate_ppo_trainer.py", line 311, in make_experience
+    all_scores = self.reward_fn(
+  File "/home/nurullah/Research/RLHF/ppo_wireless.py", line 74, in <lambda>
+    reward_fn=lambda samples, **kwargs: rwrd_fn(env, samples, **kwargs),
+TypeError: rwrd_fn() got an unexpected keyword argument 'prompts'

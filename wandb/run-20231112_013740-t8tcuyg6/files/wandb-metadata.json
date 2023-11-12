@@ -1,0 +1,108 @@
+{
+    "os": "Linux-5.15.90.1-microsoft-standard-WSL2-x86_64-with-glibc2.31",
+    "python": "3.9.18",
+    "heartbeatAt": "2023-11-12T07:37:40.600015",
+    "startedAt": "2023-11-12T07:37:40.203122",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "/home/nurullah/Research/RLHF/ppo_wireless.py",
+    "codePathLocal": "ppo_wireless.py",
+    "codePath": "ppo_wireless.py",
+    "git": {
+        "remote": "https://github.com/nurullahsevim/RLHF.git",
+        "commit": "8221af9d5e5a582c995e5ba8e4300ced6dccf6c8"
+    },
+    "email": "nurullahsevim5@gmail.com",
+    "root": "/home/nurullah/Research/RLHF",
+    "host": "DESKTOP-U1M87K9",
+    "username": "nurullah",
+    "executable": "/home/nurullah/miniconda3/envs/RLHF/bin/python",
+    "cpu_count": 6,
+    "cpu_count_logical": 12,
+    "cpu_freq": {
+        "current": 2592.0070000000005,
+        "min": 0.0,
+        "max": 0.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 2592.007,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2592.007,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2592.007,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2592.007,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2592.007,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2592.007,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2592.007,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2592.007,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2592.007,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2592.007,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2592.007,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2592.007,
+            "min": 0.0,
+            "max": 0.0
+        }
+    ],
+    "disk": {
+        "/": {
+            "total": 250.92389297485352,
+            "used": 80.39844131469727
+        }
+    },
+    "gpu": "NVIDIA GeForce RTX 2060",
+    "gpu_count": 1,
+    "gpu_devices": [
+        {
+            "name": "NVIDIA GeForce RTX 2060",
+            "memory_total": 6442450944
+        }
+    ],
+    "memory": {
+        "total": 7.678813934326172
+    }
+}

@@ -1,0 +1,29 @@
+2023-11-12 01:31:22,389 INFO    MainThread:26504 [wandb_setup.py:_flush():76] Current SDK version is 0.15.12
+2023-11-12 01:31:22,389 INFO    MainThread:26504 [wandb_setup.py:_flush():76] Configure stats pid to 26504
+2023-11-12 01:31:22,389 INFO    MainThread:26504 [wandb_setup.py:_flush():76] Loading settings from /home/nurullah/.config/wandb/settings
+2023-11-12 01:31:22,389 INFO    MainThread:26504 [wandb_setup.py:_flush():76] Loading settings from /home/nurullah/Research/RLHF/wandb/settings
+2023-11-12 01:31:22,389 INFO    MainThread:26504 [wandb_setup.py:_flush():76] Loading settings from environment variables: {}
+2023-11-12 01:31:22,389 INFO    MainThread:26504 [wandb_setup.py:_flush():76] Applying setup settings: {'_disable_service': False}
+2023-11-12 01:31:22,389 INFO    MainThread:26504 [wandb_setup.py:_flush():76] Inferring run settings from compute environment: {'program_relpath': 'ppo_wireless.py', 'program_abspath': '/home/nurullah/Research/RLHF/ppo_wireless.py', 'program': '/home/nurullah/Research/RLHF/ppo_wireless.py'}
+2023-11-12 01:31:22,389 INFO    MainThread:26504 [wandb_init.py:_log_setup():528] Logging user logs to /home/nurullah/Research/RLHF/wandb/run-20231112_013122-dctjbc3s/logs/debug.log
+2023-11-12 01:31:22,389 INFO    MainThread:26504 [wandb_init.py:_log_setup():529] Logging internal logs to /home/nurullah/Research/RLHF/wandb/run-20231112_013122-dctjbc3s/logs/debug-internal.log
+2023-11-12 01:31:22,389 INFO    MainThread:26504 [wandb_init.py:init():568] calling init triggers
+2023-11-12 01:31:22,389 INFO    MainThread:26504 [wandb_init.py:init():575] wandb.init called with sweep_config: {}
+config: {}
+2023-11-12 01:31:22,389 INFO    MainThread:26504 [wandb_init.py:init():618] starting backend
+2023-11-12 01:31:22,390 INFO    MainThread:26504 [wandb_init.py:init():622] setting up manager
+2023-11-12 01:31:22,390 INFO    MainThread:26504 [backend.py:_multiprocessing_setup():105] multiprocessing start_methods=fork,spawn,forkserver, using: spawn
+2023-11-12 01:31:22,392 INFO    MainThread:26504 [wandb_init.py:init():628] backend started and connected
+2023-11-12 01:31:22,397 INFO    MainThread:26504 [wandb_init.py:init():720] updated telemetry
+2023-11-12 01:31:22,428 INFO    MainThread:26504 [wandb_init.py:init():753] communicating run to backend with 90.0 second timeout
+2023-11-12 01:31:22,697 INFO    MainThread:26504 [wandb_run.py:_on_init():2220] communicating current version
+2023-11-12 01:31:22,779 INFO    MainThread:26504 [wandb_run.py:_on_init():2229] got version response upgrade_message: "wandb version 0.16.0 is available!  To upgrade, please run:\n $ pip install wandb --upgrade"
+
+2023-11-12 01:31:22,779 INFO    MainThread:26504 [wandb_init.py:init():804] starting run threads in backend
+2023-11-12 01:31:27,286 INFO    MainThread:26504 [wandb_run.py:_console_start():2199] atexit reg
+2023-11-12 01:31:27,286 INFO    MainThread:26504 [wandb_run.py:_redirect():2054] redirect: wrap_raw
+2023-11-12 01:31:27,287 INFO    MainThread:26504 [wandb_run.py:_redirect():2119] Wrapping output streams.
+2023-11-12 01:31:27,287 INFO    MainThread:26504 [wandb_run.py:_redirect():2144] Redirects installed.
+2023-11-12 01:31:27,288 INFO    MainThread:26504 [wandb_init.py:init():845] run started, returning control to user process
+2023-11-12 01:31:27,289 INFO    MainThread:26504 [wandb_run.py:_config_callback():1324] config_cb None None {'method': {'name': 'PPOConfig', 'ppo_epochs': 4, 'num_rollouts': 32, 'chunk_size': 32, 'init_kl_coef': 0, 'target': None, 'horizon': 10000, 'gamma': 1, 'lam': 0.95, 'cliprange': 0.2, 'cliprange_value': 0.2, 'vf_coef': 1.2, 'scale_reward': 'ignored', 'ref_mean': None, 'ref_std': None, 'cliprange_reward': 1, 'gen_kwargs': {'max_new_tokens': 9, 'top_k': 0, 'top_p': 1.0, 'do_sample': True}, 'gen_experience_kwargs': None, 'num_value_layers_unfrozen': 0}, 'model': {'model_path': './models/', 'model_arch_type': 'causal', 'num_layers_unfrozen': -1, 'peft_config': None, 'model_extra_configs': {}}, 'optimizer': {'name': 'adamw', 'kwargs': {'lr': 0.0003, 'betas': [0.9, 0.95], 'eps': 1e-08, 'weight_decay': 1e-06}}, 'scheduler': {'name': 'cosine_annealing', 'kwargs': {'T_max': 10000, 'eta_min': 0.0003}}, 'tokenizer': {'tokenizer_path': './models/', 'padding_side': 'left', 'truncation_side': 'right', 'tokenizer_extra_configs': {}}, 'train': {'total_steps': 100, 'seq_length': 100, 'epochs': 20, 'batch_size': 16, 'checkpoint_interval': 100, 'eval_interval': 5, 'pipeline': 'PromptPipeline', 'trainer': 'AcceleratePPOTrainer', 'trainer_kwargs': {}, 'project_name': 'trlx', 'run_name': None, 'entity_name': None, 'group_name': None, 'checkpoint_dir': 'ckpts', 'rollout_logging_dir': None, 'save_best': True, 'save_optimizer': True, 'resume_from_checkpoint': None, 'tracker': 'wandb', 'logging_dir': None, 'tags': [], 'seed': 1000, 'minibatch_size': None}, 'distributed': {'mixed_precision': 'no', 'num_gpus': 1}}
+2023-11-12 01:31:33,571 WARNING MsgRouterThr:26504 [router.py:message_loop():77] message_loop has been closed

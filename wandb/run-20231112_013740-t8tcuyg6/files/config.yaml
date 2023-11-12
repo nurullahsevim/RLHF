@@ -1,0 +1,133 @@
+wandb_version: 1
+
+_wandb:
+  desc: null
+  value:
+    python_version: 3.9.18
+    cli_version: 0.15.12
+    framework: huggingface
+    huggingface_version: 4.34.1
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    start_time: 1699774660.207648
+    t:
+      1:
+      - 1
+      - 5
+      - 11
+      - 30
+      - 49
+      - 53
+      - 55
+      - 71
+      - 85
+      2:
+      - 1
+      - 5
+      - 11
+      - 30
+      - 49
+      - 53
+      - 55
+      - 71
+      - 85
+      3:
+      - 13
+      - 15
+      - 23
+      4: 3.9.18
+      5: 0.15.12
+      6: 4.34.1
+      8:
+      - 5
+      13: linux-x86_64
+method:
+  desc: null
+  value:
+    name: PPOConfig
+    ppo_epochs: 4
+    num_rollouts: 32
+    chunk_size: 32
+    init_kl_coef: 0
+    target: null
+    horizon: 10000
+    gamma: 1
+    lam: 0.95
+    cliprange: 0.2
+    cliprange_value: 0.2
+    vf_coef: 1.2
+    scale_reward: ignored
+    ref_mean: null
+    ref_std: null
+    cliprange_reward: 1
+    gen_kwargs:
+      max_new_tokens: 9
+      top_k: 0
+      top_p: 1.0
+      do_sample: true
+    gen_experience_kwargs: null
+    num_value_layers_unfrozen: 0
+model:
+  desc: null
+  value:
+    model_path: ./models/
+    model_arch_type: causal
+    num_layers_unfrozen: -1
+    peft_config: null
+    model_extra_configs: {}
+optimizer:
+  desc: null
+  value:
+    name: adamw
+    kwargs:
+      lr: 0.0003
+      betas:
+      - 0.9
+      - 0.95
+      eps: 1.0e-08
+      weight_decay: 1.0e-06
+scheduler:
+  desc: null
+  value:
+    name: cosine_annealing
+    kwargs:
+      T_max: 10000
+      eta_min: 0.0003
+tokenizer:
+  desc: null
+  value:
+    tokenizer_path: ./models/
+    padding_side: left
+    truncation_side: right
+    tokenizer_extra_configs: {}
+train:
+  desc: null
+  value:
+    total_steps: 100
+    seq_length: 100
+    epochs: 20
+    batch_size: 16
+    checkpoint_interval: 100
+    eval_interval: 5
+    pipeline: PromptPipeline
+    trainer: AcceleratePPOTrainer
+    trainer_kwargs: {}
+    project_name: trlx
+    run_name: null
+    entity_name: null
+    group_name: null
+    checkpoint_dir: ckpts
+    rollout_logging_dir: null
+    save_best: true
+    save_optimizer: true
+    resume_from_checkpoint: null
+    tracker: wandb
+    logging_dir: null
+    tags: []
+    seed: 1000
+    minibatch_size: null
+distributed:
+  desc: null
+  value:
+    mixed_precision: 'no'
+    num_gpus: 1
