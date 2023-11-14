@@ -43,6 +43,10 @@ if __name__ == '__main__':
     episode_length = 16
     total_episodes = 1000
 
+    log_dir = f'logs'
+    if not os.path.exists(log_dir):
+        os.mkdir(log_dir)
+
     log_dir = f'logs/{model_name}'
     if not os.path.exists(log_dir):
         os.mkdir(log_dir)
@@ -51,7 +55,7 @@ if __name__ == '__main__':
     if not os.path.exists(model_checkpoint_dir):
         os.mkdir(model_checkpoint_dir)
 
-    figs_dir = os.path.join(log_dir, 'figs/run4')
+    figs_dir = os.path.join(log_dir, 'figs/run5')
     if not os.path.exists(figs_dir):
         os.makedirs(figs_dir)
 
@@ -94,7 +98,7 @@ if __name__ == '__main__':
         loss_var.append(np.var(episode_losses))
         print("Episode:", episode, "Initial Loss: ",episode_losses[0], "Last Loss:", episode_losses[-1])
     plt.plot(loss_var)
-    plt.savefig(figs_dir, dpi=300)
+    plt.savefig(figs_dir+f"/vars.png", dpi=300)
     plt.close()
     # torch.save(model.state_dict(), os.path.join(model_checkpoint_dir, 'pytorch_model.bin'))
     # torch.save(optimizer.state_dict(), os.path.join(model_checkpoint_dir, 'optimizer.pt'))
