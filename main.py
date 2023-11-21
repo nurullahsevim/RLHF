@@ -17,7 +17,7 @@ from transformers import AutoModelForSequenceClassification
 
 
 
-if __name__ == '__main__':
+if _name_ == '_main_':
     if torch.cuda.is_available():
         device = torch.device("cuda")
         print(f"There are {torch.cuda.device_count()} GPU(s) available.")
@@ -83,6 +83,7 @@ if __name__ == '__main__':
             # labels = labels.to(device)
             # Forward pass
             pred = model(input_ids, attention_masks)
+            loss = loss_fn(env, pred)
             env.visualize(os.path.join(testfigs_dir), episode)
 
     # Training loop
@@ -124,4 +125,5 @@ if __name__ == '__main__':
     torch.save(optimizer.state_dict(), os.path.join(model_checkpoint_dir, 'optimizer.pt'))
     tokenizer.save_vocabulary(model_checkpoint_dir)
 
+    # model.load_state_dict(torch.load(os.path.join(model_checkpoint_dir, 'pytorch_model.bin')))
     eval(model,test_eps)
