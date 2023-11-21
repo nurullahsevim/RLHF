@@ -99,13 +99,25 @@ class LOS_Env:
     def visualize(self,dir_path,fig_num):
         rssi = self.get_rssi().to("cpu")
         fig = plt.figure()
-        locs = self.get_receiver_loc().to("cpu").detach().numpy()
-        mean_loc = np.mean(locs, axis=0)
+        locs = self.get_receiver_loc()
+        mean_loc = torch.mean(locs, dim=0)
         for i in range(self.n_receivers):
             plt.scatter(self.receivers[i].loc[0].detach().numpy(), self.receivers[i].loc[1].detach().numpy(), marker="o")
-            plt.annotate("{:.2f}".format(rssi[i].detach().numpy()),self.receivers[i].loc[:2].detach().numpy(),(self.receivers[i].loc[0].detach().numpy()-20,self.receivers[i].loc[1].detach().numpy()+15),fontsize=6)
-        plt.scatter(self.transmitter.loc[0].to("cpu").detach().numpy(), self.transmitter.loc[1].to("cpu").detach().numpy(), marker="D", s=200)
-        plt.scatter(mean_loc[0], mean_loc[1], marker="v", s=200 , color='r')
+            plt.annotate("{:.2f}".format(rssi[i].detach().numpy()), self.receivers[i].loc[:2].detach().numpy(), (
+            self.receivers[i].loc[0].detach().numpy() - 20, self.receivers[i].loc[1].detach().numpy() + 15), fontsize=6)
+        plt.scatter(self.transmitter.loc[0].to("cpu").detach().numpy(),
+                    self.transmitter.loc[1].to("cpu").detach().numpy(), marker="D", s=200)
+        reward = torch.sum(self.get_rssi())/self.n_receivers
+        plt.annotate("{:.2f}".format(reward.to("cpu").detach().numpy()), self.transmitter.loc[:2].to("cpu").detach().numpy(),
+                     (self.transmitter.loc[0].to("cpu").detach().numpy() - 20, self.transmitter.loc[1].to("cpu").detach().numpy()),
+                     fontsize=10)
+        self.initialize_transmitter(mean_loc)
+        plt.scatter(self.transmitter.loc[0].to("cpu").detach().numpy(),
+                    self.transmitter.loc[1].to("cpu").detach().numpy(), marker="v", s=200, color='r')
+        reward = torch.sum(self.get_rssi()) / self.n_receivers
+        plt.annotate("{:.2f}".format(reward.to("cpu").detach().numpy()), self.transmitter.loc[:2].to("cpu").detach().numpy(),
+                     (self.transmitter.loc[0].to("cpu").detach().numpy() - 20, self.transmitter.loc[1].to("cpu").detach().numpy()),
+                     fontsize=10)
         plt.xlim([-500, 500])
         plt.ylim([-500, 500])
         plt.savefig(os.path.join(dir_path,f"{fig_num}.png"))

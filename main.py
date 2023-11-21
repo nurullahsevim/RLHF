@@ -35,7 +35,7 @@ if __name__ == '__main__':
 
     optimizer = AdamW(model.parameters(), lr=3e-5)
     episode_length = 4
-    total_episodes = 10000
+    total_episodes = 3000
     test_eps = 100
 
     log_dir = f'logs'
@@ -50,7 +50,7 @@ if __name__ == '__main__':
     if not os.path.exists(model_checkpoint_dir):
         os.mkdir(model_checkpoint_dir)
 
-    figs_dir = os.path.join(log_dir, 'figs/run14')
+    figs_dir = os.path.join(log_dir, 'figs/run16')
     if not os.path.exists(figs_dir):
         os.makedirs(figs_dir)
 
@@ -83,7 +83,7 @@ if __name__ == '__main__':
             # labels = labels.to(device)
             # Forward pass
             pred = model(input_ids, attention_masks)
-            env.visualize(os.path.join(testfigs_dir), step_num)
+            env.visualize(os.path.join(testfigs_dir), episode)
 
     # Training loop
     reward_var = []
