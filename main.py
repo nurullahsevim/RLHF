@@ -35,7 +35,8 @@ if __name__ == '__main__':
 
     optimizer = AdamW(model.parameters(), lr=3e-5)
     episode_length = 4
-    total_episodes = 4000
+    total_episodes = 10000
+    test_eps = 100
 
     log_dir = f'logs'
     if not os.path.exists(log_dir):
@@ -49,9 +50,17 @@ if __name__ == '__main__':
     if not os.path.exists(model_checkpoint_dir):
         os.mkdir(model_checkpoint_dir)
 
-    figs_dir = os.path.join(log_dir, 'figs/run12')
+    figs_dir = os.path.join(log_dir, 'figs/run14')
     if not os.path.exists(figs_dir):
         os.makedirs(figs_dir)
+
+    trainfigs_dir = os.path.join(figs_dir, 'train')
+    if not os.path.exists(trainfigs_dir):
+        os.makedirs(trainfigs_dir)
+
+    testfigs_dir = os.path.join(figs_dir, 'test')
+    if not os.path.exists(testfigs_dir):
+        os.makedirs(testfigs_dir)
 
     def loss_fn(env,output):
         loc = 500*output.squeeze()
@@ -61,12 +70,27 @@ if __name__ == '__main__':
         rssi = env.get_rssi()
         return -torch.sum(rssi)/env.n_receivers
 
+    def eval(model, test_eps):
+        for episode in tqdm(range(test_eps)):
+            model.eval()
+            mean = 500 * torch.rand(1) - 250
+            env = LOS_Env(16, mean, device)
+            prompt = env.get_prompt()
+            encodings = tokenizer(prompt, max_length=512, padding=False, truncation=True, return_tensors="pt")
+            input_ids = encodings['input_ids'].to("cuda")
+            attention_masks = encodings['attention_mask'].to("cuda")
+            # labels = torch.tensor(labels, dtype=torch.float32)
+            # labels = labels.to(device)
+            # Forward pass
+            pred = model(input_ids, attention_masks)
+            env.visualize(os.path.join(testfigs_dir), step_num)
+
     # Training loop
     reward_var = []
     for episode in range(total_episodes):
 
-        if not os.path.exists(os.path.join(figs_dir,f'{episode}')):
-            os.mkdir(os.path.join(figs_dir,f'{episode}'))
+        if not os.path.exists(os.path.join(trainfigs_dir,f'{episode}')):
+            os.mkdir(os.path.join(trainfigs_dir,f'{episode}'))
 
         model.train()
         total_loss = 0
@@ -83,7 +107,7 @@ if __name__ == '__main__':
             # Forward pass
             pred = model(input_ids,attention_masks)
             loss = loss_fn(env,pred)
-            env.visualize(os.path.join(figs_dir,f'{episode}'),step_num)
+            env.visualize(os.path.join(trainfigs_dir,f'{episode}'),step_num)
             # Backward pass
             optimizer.zero_grad()
             loss.backward()
@@ -94,8 +118,10 @@ if __name__ == '__main__':
         reward_var.append(np.var(episode_rewards))
         print("Episode:", episode, "Initial Reward: ",episode_rewards[0], "Last Reward:", episode_rewards[-1])
     plt.plot(reward_var)
-    plt.savefig(figs_dir+f"/vars.png", dpi=300)
+    plt.savefig(trainfigs_dir+f"/vars.png", dpi=300)
     plt.close()
-    # torch.save(model.state_dict(), os.path.join(model_checkpoint_dir, 'pytorch_model.bin'))
-    # torch.save(optimizer.state_dict(), os.path.join(model_checkpoint_dir, 'optimizer.pt'))
-    # tokenizer.save_vocabulary(model_checkpoint_dir)
+    torch.save(model.state_dict(), os.path.join(model_checkpoint_dir, 'pytorch_model.bin'))
+    torch.save(optimizer.state_dict(), os.path.join(model_checkpoint_dir, 'optimizer.pt'))
+    tokenizer.save_vocabulary(model_checkpoint_dir)
+
+    eval(model,test_eps)
