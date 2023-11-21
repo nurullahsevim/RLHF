@@ -22,9 +22,10 @@ class RegressionModel(nn.Module):
         last_hidden_states = outputs.last_hidden_state
         pooled_output = last_hidden_states[:, 0, :]  # Taking the [CLS] token's representation
         regression_output = self.regression_head(pooled_output)
-        outputs.last_hidden_state = self.head_activation(regression_output)
-        outputs.hidden_states = outputs.hidden_states + (self.head_activation(regression_output),)
-        return outputs
+        regression_output = self.head_activation(regression_output)
+        # outputs.last_hidden_state = self.head_activation(regression_output)
+        # outputs.hidden_states = outputs.hidden_states + (self.head_activation(regression_output),)
+        return regression_output
 
 
     def generate(self, input_ids, attention_mask=None, **kwargs):

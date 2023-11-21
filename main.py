@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from model import RegressionModel
 from transformers import T5Tokenizer, T5ForConditionalGeneration, AutoTokenizer
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler
-from torch.optim import AdamW
+from torch.optim import AdamW,Adam
 import torch.nn as nn
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -30,18 +30,12 @@ if __name__ == '__main__':
     model = RegressionModel(model_name,2)
     tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-    # for param in model.transformer.parameters():
-    #     param.requires_grad = False
     model = model.to(device)
-
-    # train_data = torch.load('train.pt')
-    # train_sampler = RandomSampler(train_data)
-    # train_dataloader = DataLoader(train_data, sampler=train_sampler, batch_size=16)
 
 
     optimizer = AdamW(model.parameters(), lr=3e-5)
-    episode_length = 16
-    total_episodes = 1000
+    episode_length = 4
+    total_episodes = 4000
 
     log_dir = f'logs'
     if not os.path.exists(log_dir):
@@ -55,19 +49,20 @@ if __name__ == '__main__':
     if not os.path.exists(model_checkpoint_dir):
         os.mkdir(model_checkpoint_dir)
 
-    figs_dir = os.path.join(log_dir, 'figs/run5')
+    figs_dir = os.path.join(log_dir, 'figs/run12')
     if not os.path.exists(figs_dir):
         os.makedirs(figs_dir)
 
     def loss_fn(env,output):
         loc = 500*output.squeeze()
+        # loc = output.squeeze()
         loc = torch.cat((loc,torch.tensor([50]).to(loc.device)))
         env.initialize_transmitter(loc)
         rssi = env.get_rssi()
         return -torch.sum(rssi)/env.n_receivers
 
     # Training loop
-    loss_var = []
+    reward_var = []
     for episode in range(total_episodes):
 
         if not os.path.exists(os.path.join(figs_dir,f'{episode}')):
@@ -75,8 +70,9 @@ if __name__ == '__main__':
 
         model.train()
         total_loss = 0
-        env = LOS_Env(16,device)
-        episode_losses = np.zeros((0,))
+        mean = 500 * torch.rand(1) - 250
+        env = LOS_Env(16,mean,device)
+        episode_rewards = np.zeros((0,))
         for step_num  in tqdm(range(episode_length)):
             prompt = env.get_prompt()
             encodings = tokenizer(prompt, max_length=512, padding=False, truncation=True, return_tensors="pt")
@@ -85,7 +81,7 @@ if __name__ == '__main__':
             # labels = torch.tensor(labels, dtype=torch.float32)
             # labels = labels.to(device)
             # Forward pass
-            pred = model(input_ids,attention_masks).last_hidden_state
+            pred = model(input_ids,attention_masks)
             loss = loss_fn(env,pred)
             env.visualize(os.path.join(figs_dir,f'{episode}'),step_num)
             # Backward pass
@@ -93,11 +89,11 @@ if __name__ == '__main__':
             loss.backward()
             optimizer.step()
 
-            episode_losses = np.append(episode_losses, -loss.to("cpu").detach().numpy())
+            episode_rewards = np.append(episode_rewards, -loss.to("cpu").detach().numpy())
 
-        loss_var.append(np.var(episode_losses))
-        print("Episode:", episode, "Initial Loss: ",episode_losses[0], "Last Loss:", episode_losses[-1])
-    plt.plot(loss_var)
+        reward_var.append(np.var(episode_rewards))
+        print("Episode:", episode, "Initial Reward: ",episode_rewards[0], "Last Reward:", episode_rewards[-1])
+    plt.plot(reward_var)
     plt.savefig(figs_dir+f"/vars.png", dpi=300)
     plt.close()
     # torch.save(model.state_dict(), os.path.join(model_checkpoint_dir, 'pytorch_model.bin'))
