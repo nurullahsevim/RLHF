@@ -17,7 +17,7 @@ from transformers import AutoModelForSequenceClassification
 
 
 
-if __name__ == '__main__':
+if _name_ == '_main_':
     if torch.cuda.is_available():
         device = torch.device("cuda")
         print(f"There are {torch.cuda.device_count()} GPU(s) available.")
