@@ -17,7 +17,8 @@ from transformers import AutoModelForSequenceClassification
 
 
 
-if _name_ == '_main_':
+
+if __name__ == '__main__':
     if torch.cuda.is_available():
         device = torch.device("cuda")
         print(f"There are {torch.cuda.device_count()} GPU(s) available.")
@@ -35,7 +36,7 @@ if _name_ == '_main_':
 
     optimizer = AdamW(model.parameters(), lr=3e-5)
     episode_length = 4
-    total_episodes = 3000
+    total_episodes = 300
     test_eps = 100
 
     log_dir = f'logs'
@@ -50,7 +51,7 @@ if _name_ == '_main_':
     if not os.path.exists(model_checkpoint_dir):
         os.mkdir(model_checkpoint_dir)
 
-    figs_dir = os.path.join(log_dir, 'figs/run16')
+    figs_dir = os.path.join(log_dir, 'figs/run17')
     if not os.path.exists(figs_dir):
         os.makedirs(figs_dir)
 
@@ -73,16 +74,13 @@ if _name_ == '_main_':
     def eval(model, test_eps):
         for episode in tqdm(range(test_eps)):
             model.eval()
-            mean = 500 * torch.rand(1) - 250
+            mean = np.random.uniform(low=-250, high=250)
             env = LOS_Env(16, mean, device)
             prompt = env.get_prompt()
-            encodings = tokenizer(prompt, max_length=512, padding=False, truncation=True, return_tensors="pt")
-            input_ids = encodings['input_ids'].to("cuda")
-            attention_masks = encodings['attention_mask'].to("cuda")
             # labels = torch.tensor(labels, dtype=torch.float32)
             # labels = labels.to(device)
             # Forward pass
-            pred = model(input_ids, attention_masks)
+            pred = model(prompt)
             loss = loss_fn(env, pred)
             env.visualize(os.path.join(testfigs_dir), episode)
 
@@ -95,18 +93,15 @@ if _name_ == '_main_':
 
         model.train()
         total_loss = 0
-        mean = 500 * torch.rand(1) - 250
+        mean = np.random.uniform(low=-250,high=250)
         env = LOS_Env(16,mean,device)
         episode_rewards = np.zeros((0,))
         for step_num  in tqdm(range(episode_length)):
             prompt = env.get_prompt()
-            encodings = tokenizer(prompt, max_length=512, padding=False, truncation=True, return_tensors="pt")
-            input_ids = encodings['input_ids'].to("cuda")
-            attention_masks = encodings['attention_mask'].to("cuda")
             # labels = torch.tensor(labels, dtype=torch.float32)
             # labels = labels.to(device)
             # Forward pass
-            pred = model(input_ids,attention_masks)
+            pred = model(prompt)
             loss = loss_fn(env,pred)
             env.visualize(os.path.join(trainfigs_dir,f'{episode}'),step_num)
             # Backward pass

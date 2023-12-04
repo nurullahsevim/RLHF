@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import torch
 import os,sys
 
+
 class Transmitter:
     '''
     Class for base station with various parameters
@@ -49,11 +50,11 @@ class LOS_Env:
         self.device = device
         self.n_receivers = N
         self.rec_mean = mean
-        tr_loc = 1000*torch.rand(3)-500  # randomly choosing a location for transmitter
-        tr_loc[-1] = 50  # the height of the transmitter will be fixed for now
+        # tr_loc = np.random.uniform(low=-500,high=500)  # randomly choosing a location for transmitter
+        # tr_loc[-1] = 50  # the height of the transmitter will be fixed for now
 
-        # tr_loc = np.random.uniform(low=-500, high=500, size=(3,))  #randomly choosing a location for transmitter
-        # tr_loc[-1] = 50 #the height of the transmitter will be fixed for now
+        tr_loc = np.random.uniform(low=-500, high=500, size=(3,))  #randomly choosing a location for transmitter
+        tr_loc[-1] = 50 #the height of the transmitter will be fixed for now
         self.initialize_transmitter(tr_loc, 6e9, 78.5, 47.5) # initialize one transmitter later should convert this to a list
         self.initialize_receivers()
 
@@ -61,23 +62,23 @@ class LOS_Env:
 
         self.receivers = []
         for i in range(self.n_receivers):
-            rc_loc = 500 * (torch.rand(3)-0.5) + self.rec_mean  # randomly choosing a location for transmitter
-            rc_loc[-1] = 0  # the height of the transmitter will be fixed for now
-            # rc_loc = np.random.uniform(low=-500, high=500, size=(3,))
-            # rc_loc[-1] = 0
+            # rc_loc = np.random.uniform(3)-0.5) + self.rec_mean  # randomly choosing a location for transmitter
+            # rc_loc[-1] = 0  # the height of the transmitter will be fixed for now
+            rc_loc = np.random.uniform(low=-250+self.rec_mean, high=250+self.rec_mean, size=(3,))
+            rc_loc[-1] = 0
             self.receivers.append(Receiver(rc_loc))
 
     def get_receiver_loc(self):
-        locations = torch.zeros(self.n_receivers,3)
+        locations = np.zeros((self.n_receivers,3))
         for i in range(self.n_receivers):
             locations[i,:] = self.receivers[i].loc
-        return locations.to(self.device)
+        return locations
     def initialize_transmitter(self,loc,fc=6e9,Pt=70,Ga=50):
         self.transmitter = Transmitter(loc,fc,Pt,Ga)
     def get_distance(self):
-        self.distances = torch.zeros(self.n_receivers).to(self.device)
+        self.distances = np.zeros((self.n_receivers,))
         for i in range(self.n_receivers):
-            self.distances[i] = torch.norm(self.transmitter.loc.to(self.device) - self.receivers[i].loc.to(self.device))
+            self.distances[i] = np.linalg.norm(self.transmitter.loc - self.receivers[i].loc)
             # self.distances[i] = np.linalg.norm(self.transmitter.loc - self.receivers[i].loc)
         self.distances
     def free_space_path_loss(self):
@@ -88,35 +89,35 @@ class LOS_Env:
         c = 3e8
         lamda_c = c / self.transmitter.fc
         # return 10 * np.log10((4 * np.pi * self.distances / lamda_c) ** 2)
-        fspl =10 * torch.log10((4 * torch.pi * self.distances / lamda_c) ** 2)
-        return fspl.to(self.device)
+        fspl =10 * np.log10((4 * np.pi * self.distances / lamda_c) ** 2)
+        return fspl
 
     def get_rssi(self):
         self.get_distance()
         path_loss = self.free_space_path_loss()
         eirp = self.transmitter.get_eirp()
-        return (eirp - path_loss).to(self.device)
+        return eirp - path_loss
     def visualize(self,dir_path,fig_num):
-        rssi = self.get_rssi().to("cpu")
+        rssi = self.get_rssi()
         fig = plt.figure()
         locs = self.get_receiver_loc()
-        mean_loc = torch.mean(locs, dim=0)
+        mean_loc = np.mean(locs, axis=0)
         for i in range(self.n_receivers):
-            plt.scatter(self.receivers[i].loc[0].detach().numpy(), self.receivers[i].loc[1].detach().numpy(), marker="o")
-            plt.annotate("{:.2f}".format(rssi[i].detach().numpy()), self.receivers[i].loc[:2].detach().numpy(), (
-            self.receivers[i].loc[0].detach().numpy() - 20, self.receivers[i].loc[1].detach().numpy() + 15), fontsize=6)
-        plt.scatter(self.transmitter.loc[0].to("cpu").detach().numpy(),
-                    self.transmitter.loc[1].to("cpu").detach().numpy(), marker="D", s=200)
-        reward = torch.sum(self.get_rssi())/self.n_receivers
-        plt.annotate("{:.2f}".format(reward.to("cpu").detach().numpy()), self.transmitter.loc[:2].to("cpu").detach().numpy(),
-                     (self.transmitter.loc[0].to("cpu").detach().numpy() - 20, self.transmitter.loc[1].to("cpu").detach().numpy()),
+            plt.scatter(self.receivers[i].loc[0], self.receivers[i].loc[1], marker="o")
+            plt.annotate("{:.2f}".format(rssi[i]), self.receivers[i].loc[:2], (
+                self.receivers[i].loc[0] - 20, self.receivers[i].loc[1] + 15), fontsize=6)
+        plt.scatter(self.transmitter.loc[0],
+                    self.transmitter.loc[1], marker="D", s=200)
+        reward = np.sum(self.get_rssi())/self.n_receivers
+        plt.annotate("{:.2f}".format(reward), self.transmitter.loc[:2],
+                     (self.transmitter.loc[0] - 20, self.transmitter.loc[1]),
                      fontsize=10)
         self.initialize_transmitter(mean_loc)
-        plt.scatter(self.transmitter.loc[0].to("cpu").detach().numpy(),
-                    self.transmitter.loc[1].to("cpu").detach().numpy(), marker="v", s=200, color='r')
-        reward = torch.sum(self.get_rssi()) / self.n_receivers
-        plt.annotate("{:.2f}".format(reward.to("cpu").detach().numpy()), self.transmitter.loc[:2].to("cpu").detach().numpy(),
-                     (self.transmitter.loc[0].to("cpu").detach().numpy() - 20, self.transmitter.loc[1].to("cpu").detach().numpy()),
+        plt.scatter(self.transmitter.loc[0],
+                    self.transmitter.loc[1], marker="v", s=200, color='r')
+        reward = np.sum(self.get_rssi()) / self.n_receivers
+        plt.annotate("{:.2f}".format(reward), self.transmitter.loc[:2],
+                     (self.transmitter.loc[0] - 20, self.transmitter.loc[1]),
                      fontsize=10)
         plt.xlim([-500, 500])
         plt.ylim([-500, 500])

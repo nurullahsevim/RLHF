@@ -5,6 +5,7 @@ from transformers import DistilBertTokenizer, DistilBertModel
 import torch
 
 
+
 class RegressionModel(nn.Module):
     def __init__(self, model_name,output_num):
         super(RegressionModel, self).__init__()
@@ -15,10 +16,16 @@ class RegressionModel(nn.Module):
         self.config = self.transformer.config
         self.regression_head = nn.Linear(config.hidden_size, output_num)  # Assuming the output is a single scalar
         self.head_activation = nn.Tanh()
+        self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
 
-    def forward(self, input_ids, attention_mask, **kwargs):
+        self.to(self.device)
+
+    def forward(self, prompt, **kwargs):
         kwargs = kwargs
-        outputs = self.transformer(input_ids, attention_mask=attention_mask,output_hidden_states=True)
+        encodings = self.tokenizer(prompt, max_length=512, padding=False, truncation=True, return_tensors="pt")
+        input_ids = encodings['input_ids'].to(self.device)
+        attention_masks = encodings['attention_mask'].to(self.device)
+        outputs = self.transformer(input_ids, attention_mask=attention_masks,output_hidden_states=True)
         last_hidden_states = outputs.last_hidden_state
         pooled_output = last_hidden_states[:, 0, :]  # Taking the [CLS] token's representation
         regression_output = self.regression_head(pooled_output)
@@ -26,12 +33,3 @@ class RegressionModel(nn.Module):
         # outputs.last_hidden_state = self.head_activation(regression_output)
         # outputs.hidden_states = outputs.hidden_states + (self.head_activation(regression_output),)
         return regression_output
-
-
-    def generate(self, input_ids, attention_mask=None, **kwargs):
-        kwargs = kwargs
-        output = self.forward(input_ids, attention_mask=None)
-        output_np = output.detach().numpy()
-        output_str = f"{output_np[0]:.3f},{output_np[1]:.3f}"
-        encoded_output = self.tokenizer(output_str, return_tensors='pt')
-        return encoded_output
