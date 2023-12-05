@@ -19,119 +19,35 @@ import transformers
 from transformers import LlamaTokenizer, LlamaForCausalLM
 from transformers import AutoModelForQuestionAnswering, AutoTokenizer, AutoModel, pipeline
 from trlx.examples.randomwalks import generate_random_walks
+import sionna
+import tensorflow as tf
+import matplotlib.pyplot as plt
+import numpy as np
+import time
 
+# Import Sionna RT components
+from sionna.rt import load_scene, Transmitter, Receiver, PlanarArray, Camera
 
-def foo(a,b,c):
-    return a+b+c
+# For link-level simulations
+from sionna.channel import cir_to_ofdm_channel, subcarrier_frequencies, OFDMChannel, ApplyOFDMChannel, CIRDataset
+from sionna.nr import PUSCHConfig, PUSCHTransmitter, PUSCHReceiver
+from sionna.utils import compute_ber, ebnodb2no, PlotBER
+from sionna.ofdm import KBestDetector, LinearDetector
+from sionna.mimo import StreamManagement
 
-
-def rwrd_fn(env, samples,prompts,outputs, **kwargs):
-    kwargs = kwargs
-    reward = []
-    for i,output in enumerate(outputs):
-        output = output.replace("(","")
-        output = output.replace(")", "")
-        output_list = output.split(",")
-        for j in range(3):
-            try:
-                output_list[j] = float(output_list[j])
-            except:
-                reward.append(-1000)
-                break
-        if len(reward)>i:
-            continue
-        loc = np.array(output_list[:3])
-        env.initialize_transmitter(loc)
-        rssi = env.get_rssi()
-        reward.append(np.sum(rssi))
-    return reward
 
 if __name__ == '__main__':
-    # for i in range(5):
-    #     print("i")
-    #     for j in range(6):
-    #         print("j")
-    #         if j == 2:
-    #             break
 
+    gpus = tf.config.list_physical_devices('GPU')
+    if gpus:
+        try:
+            tf.config.experimental.set_memory_growth(gpus[0], True)
+        except RuntimeError as e:
+            print(e)
+    # Avoid warnings from TensorFlow
+    tf.get_logger().setLevel('ERROR')
+    tf.random.set_seed(1)  # Set global random seed for reproducibility
 
-    env = LOS_Env(16)
-    propmt = [env.get_prompt()]*16
-    outputs = ["153,535.3,956.75556"]*16
-    rewards = rwrd_fn(env,propmt,propmt,outputs)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    # model_name = "distilgpt2"
-    # model = RegressionModel(model_name, 2)
-    # tokenizer = AutoTokenizer.from_pretrained(model_name, local_files_only=False)
-    # env = LOS_Env(16)
-    # propmt = env.get_prompt()
-    # output_dir = "./models/"
-    #
-    # # Step 1: Save a model, configuration and vocabulary that you have fine-tuned
-    #
-    # # If we have a distributed model, save only the encapsulated model
-    # # (it was wrapped in PyTorch DistributedDataParallel or DataParallel)
-    # model_to_save = model.module if hasattr(model, 'module') else model
-    #
-    # # If we save using the predefined names, we can load using `from_pretrained`
-    # output_model_file = os.path.join(output_dir, 'pytorch_model.bin')
-    # output_config_file = os.path.join(output_dir, 'config.json')
-    #
-    # torch.save(model.state_dict(), output_model_file)
-    # model.config.to_json_file(output_config_file)
-    # tokenizer.save_vocabulary(output_dir)
-    # # # load again
-    # # # Example for a Bert model
-    # model = AutoModel.from_pretrained(output_dir)
-    # tokenizer = AutoTokenizer.from_pretrained(output_dir)
-
-
-
-
-
-
-
-
-    # model = AutoModel.from_pretrained("model.pth")
-
-    # model = RegressionModel('distilbert-base-uncased',2)
-    # torch.save(model,'trlx/models/model.pth')
-
-    # model = torch.load('model.pth')
-    # print(model.model_name)
-    # tokenizer = AutoTokenizer.from_pretrained('distilbert-base-uncased')
-    # model = AutoModel.from_pretrained("distilbert-base-uncased")
-    # text = "Output 2."
-    # encoded_input = tokenizer(propmt, return_tensors='pt')
-    # output = model(**encoded_input)
-    # pass
-    # print(output.detach().numpy())
-    # output_np = output.detach().numpy()
-    # output_str = f"{output_np[0]:.3f},{output_np[1]:.3f}"
-    # encoded_output = tokenizer(output_str, return_tensors='pt')
-    # print(tokenizer.decode(encoded_output['input_ids'].squeeze(), skip_special_tokens=True))
-    # foo2 = lambda a,b: foo(5,a,b)
-    # print(foo2(1,2))
-
+    # scene = load_scene('../mitsuba/campus.xml')  # Try also sionna.rt.scene.etoile
+    scene = load_scene(sionna.rt.scene.munich)
+    scene.preview()
