@@ -18,7 +18,6 @@ from transformers import pipeline, set_seed
 import transformers
 from transformers import LlamaTokenizer, LlamaForCausalLM
 from transformers import AutoModelForQuestionAnswering, AutoTokenizer, AutoModel, pipeline
-from trlx.examples.randomwalks import generate_random_walks
 import sionna
 import tensorflow as tf
 import matplotlib.pyplot as plt
@@ -48,6 +47,7 @@ if __name__ == '__main__':
     tf.get_logger().setLevel('ERROR')
     tf.random.set_seed(1)  # Set global random seed for reproducibility
 
-    # scene = load_scene('../mitsuba/campus.xml')  # Try also sionna.rt.scene.etoile
+    # scene = load_scene('mitsuba/campus.xml')  # Try also sionna.rt.scene.etoile
     scene = load_scene(sionna.rt.scene.munich)
     scene.preview()
+    scene.render(camera="preview", num_samples=512)
