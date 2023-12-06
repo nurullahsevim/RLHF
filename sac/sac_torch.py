@@ -71,7 +71,7 @@ class Agent():
         self.critic_2.load_checkpoint()
 
     def learn(self):
-        if self.memory.mem_cntr < 50*self.batch_size:
+        if self.memory.mem_cntr < self.batch_size:
             return
 
         state, prompt, action, reward, new_state = \

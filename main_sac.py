@@ -1,6 +1,6 @@
 import os,sys
 
-sys.path.insert(1, '/home/nurullah/Research/RLHF/sac')
+sys.path.insert(1, r'C:\Users\nurullahsevim\Desktop\research\RLHF\RLHF\sac')
 from generate_data import MyDataset
 from datasets import Dataset
 from datasets import IterableDataset
@@ -31,8 +31,8 @@ if __name__ == '__main__':
     model_name = 'distilbert-base-uncased' #'bert-base-uncased' #"google/flan-t5-base"
 
     agent = Agent(model_name,batch_size=8)
-    episode_length = 1
-    total_episodes = 4000
+    episode_length = 4
+    total_episodes = 1000
     test_eps = 100
 
     log_dir = f'logs'
@@ -51,7 +51,7 @@ if __name__ == '__main__':
     if not os.path.exists(model_checkpoint_dir):
         os.mkdir(model_checkpoint_dir)
 
-    figs_dir = os.path.join(log_dir, 'figs/run8')
+    figs_dir = os.path.join(log_dir, 'figs/run9')
     if not os.path.exists(figs_dir):
         os.makedirs(figs_dir)
 
@@ -70,13 +70,14 @@ if __name__ == '__main__':
     if load_checkpoint:
         agent.load_models()
 
+    mean = np.random.uniform(low=-250,high=250)
+    env = LOS_Env(16, mean, device)
     for episode in range(total_episodes):
 
         if not os.path.exists(os.path.join(trainfigs_dir,f'{episode}')):
             os.mkdir(os.path.join(trainfigs_dir,f'{episode}'))
 
-        mean = np.random.uniform(low=-250,high=250)
-        env = LOS_Env(16, mean, device)
+        
         prompt = env.get_prompt()
         score = 0
         for step_num in range(episode_length):
@@ -86,8 +87,8 @@ if __name__ == '__main__':
             env.initialize_transmitter(loc)
             rssi_ = env.get_rssi()
             # observation_, reward, done, info = env.step(action)
-            reward = np.sum(rssi_)/env.n_receivers
-            score += reward
+            reward = (np.sum(rssi_)/env.n_receivers) - np.sum(np.abs(action[:2]))/10
+            score += reward/episode_length
             agent.remember(rssi, prompt, action, reward, rssi_)
             env.visualize(os.path.join(trainfigs_dir,f'{episode}'),step_num)
             if not load_checkpoint:
