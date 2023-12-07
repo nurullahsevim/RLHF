@@ -49,7 +49,7 @@ if __name__ == '__main__':
     # tf.get_logger().setLevel('ERROR')
     # tf.random.set_seed(1)  # Set global random seed for reproducibility
 
-    scene = load_scene('mitsuba/campus/campus.xml')  # Try also sionna.rt.scene.etoile
+    scene = load_scene('mitsuba/campus_light/campus.xml')  # Try also sionna.rt.scene.etoile
 
     # Configure antenna array for all transmitters
     scene.tx_array = PlanarArray(num_rows=8,
@@ -85,19 +85,26 @@ if __name__ == '__main__':
     print(scene.transmitters)
     print(scene.receivers)
 
+
+
+    my_cam = Camera("my_cam", position=[8.5,21,500], look_at=[45,90,1.5])
+    scene.add(my_cam)
+
     paths = scene.compute_paths(max_depth=5,
                                 num_samples=1e6)
     scene.preview(paths=paths)  # Open preview showing paths
     scene.render(camera="preview", paths=paths)  # Render scene with paths from preview camera
-    scene.render_to_file(camera="preview",
-                         filename="scene_path.png",
+    scene.render_to_file(camera=my_cam,
+                         filename="scene_path3.png",
                          paths=paths)  # Render scene with paths to file
+
+
 
     cm = scene.coverage_map(cm_cell_size=[1.,1.], # Configure size of each cell
                            num_samples=1e7) # Number of rays to trace
 
     scene.preview(coverage_map=cm)  # Open preview showing coverage map
     scene.render(camera="preview", coverage_map=cm)  # Render scene with coverage map
-    scene.render_to_file(camera="preview",
-                         filename="scene_cm.png",
+    scene.render_to_file(camera=my_cam,
+                         filename="scene_cm3.png",
                          coverage_map=cm)  # Render scene with coverage map to file
