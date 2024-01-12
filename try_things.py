@@ -69,13 +69,13 @@ if __name__ == '__main__':
 
     # Create transmitter
     tx = Transmitter(name="tx",
-                  position=[8.5,21,27],
+                  position=[8.5,21,30],
                   orientation=[0,0,0])
     scene.add(tx)
 
     # Create a receiver
     rx = Receiver(name="rx",
-               position=[45,90,1.5],
+               position=[45,90,3],
                orientation=[0,0,0])
     scene.add(rx)
 
@@ -101,7 +101,7 @@ if __name__ == '__main__':
 
 
     cm = scene.coverage_map(cm_cell_size=[1.,1.], # Configure size of each cell
-                           num_samples=1e7) # Number of rays to trace
+                           num_samples=1e6) # Number of rays to trace
 
     scene.preview(coverage_map=cm)  # Open preview showing coverage map
     scene.render(camera="preview", coverage_map=cm)  # Render scene with coverage map
