@@ -1,7 +1,11 @@
 import numpy as np
+import gymnasium as gym
 import matplotlib.pyplot as plt
-import torch
 import os,sys
+from gymnasium import spaces
+import string
+from stable_baselines3.common.env_checker import check_env
+
 
 
 class Transmitter:
@@ -39,24 +43,23 @@ class Receiver:
         """
         self.loc = loc
 
-class LOS_Env:
-    """
-    Class for LOS environment where there is no building and all reception is line of sight
-    """
-    def __init__(self,N,mean,device):
-        """
-        :param N: number of reception points on the map
-        """
-        self.device = device
+
+class LOS_Env(gym.Env):
+
+    def __init__(self,N,mean):
+        super(LOS_Env, self).__init__()
         self.n_receivers = N
         self.rec_mean = mean
-        # tr_loc = np.random.uniform(low=-500,high=500)  # randomly choosing a location for transmitter
-        # tr_loc[-1] = 50  # the height of the transmitter will be fixed for now
 
-        tr_loc = np.random.uniform(low=-500, high=500, size=(3,))  #randomly choosing a location for transmitter
-        tr_loc[-1] = 50 #the height of the transmitter will be fixed for now
-        self.initialize_transmitter(tr_loc, 6e9, 78.5, 47.5) # initialize one transmitter later should convert this to a list
-        self.initialize_receivers()
+
+        self.action_space = spaces.Box(
+            low=-1, high=1, shape=(2,), dtype=np.float32
+        )
+        # self.observation_space = spaces.Text(
+        #     max_length=512,charset=string.printable
+        # )
+
+        self.observation_space = spaces.Box(low=-500, high=500, shape=(N,3), dtype=np.float32)
 
     def initialize_receivers(self):
 
@@ -97,7 +100,47 @@ class LOS_Env:
         path_loss = self.free_space_path_loss()
         eirp = self.transmitter.get_eirp()
         return eirp - path_loss
-    def visualize(self,dir_path,fig_num):
+
+    def get_prompt(self):
+        locations = self.get_receiver_loc()
+        prompt = ""
+        for i,loc in enumerate(locations):
+            prompt += f"Location {i+1}: ({locations[i,0]:.2f},{locations[i,1]:.2f},{locations[i,2]:.2f}), "
+        return prompt
+
+    def reset(self, seed=None, options=None):
+
+        super().reset(seed=seed, options=options)
+        tr_loc = np.random.uniform(low=-500, high=500, size=(3,))  # randomly choosing a location for transmitter
+        tr_loc[-1] = 50  # the height of the transmitter will be fixed for now
+        self.initialize_transmitter(tr_loc, 6e9, 78.5,
+                                    47.5)  # initialize one transmitter later should convert this to a list
+        self.initialize_receivers()
+        locations = self.get_receiver_loc()
+        return locations.astype(np.float32), {}  # empty info dict
+
+    def step(self, action):
+        action = np.append(500*action,np.array([50])) #the action is expected to be (x,x,50)
+        self.initialize_transmitter(action)  # initialize one transmitter later should convert this to a list
+        rssi = self.get_rssi()
+
+
+        reward = np.mean(rssi)
+        locations = self.get_receiver_loc()
+        terminated = False
+        truncated = False
+        # Optionally we can pass additional info, we are not using that for now
+        info = {}
+
+        return (
+            locations.astype(np.float32),
+            reward,
+            terminated,
+            truncated,
+            info,
+        )
+
+    def render(self):
         rssi = self.get_rssi()
         fig = plt.figure()
         locs = self.get_receiver_loc()
@@ -121,21 +164,12 @@ class LOS_Env:
                      fontsize=10)
         plt.xlim([-500, 500])
         plt.ylim([-500, 500])
-        plt.savefig(os.path.join(dir_path,f"{fig_num}.png"))
+        plt.show()
         plt.close()
 
-    def get_prompt(self):
-        locations = self.get_receiver_loc()
-        prompt = ""
-        for i,loc in enumerate(locations):
-            prompt += f"Location {i+1}: ({locations[i,0]:.2f},{locations[i,1]:.2f},{locations[i,2]:.2f}), "
-        return prompt
-if __name__ == '__main__':
-    env = LOS_Env(16)
-    print(env.get_prompt())
-    env.visualize()
-    # tr_loc = np.random.uniform(low=-500, high=500, size=(3,))  # randomly choosing a location for transmitter
-    # tr_loc[-1] = 50  # the height of the transmitter will be fixed for now
-    # env.initialize_transmitter(tr_loc,8e9,50,25)
-    # env.visualize()
+    def close(self):
+        pass
 
+if __name__ == "__main__":
+    env = LOS_Env(16,200)
+    check_env(env, warn=True)
