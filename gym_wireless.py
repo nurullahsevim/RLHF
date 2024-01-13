@@ -5,6 +5,13 @@ import os,sys
 from gymnasium import spaces
 import string
 from stable_baselines3.common.env_checker import check_env
+import torch as T
+import torch.nn as nn
+from gymnasium import spaces
+from model import LLM
+from stable_baselines3 import PPO,SAC,DDPG
+from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
+
 
 
 
@@ -170,6 +177,41 @@ class LOS_Env(gym.Env):
     def close(self):
         pass
 
+
+class LLM_FE(BaseFeaturesExtractor):
+    """
+    :param observation_space: (gym.Space)
+    :param features_dim: (int) Number of features extracted.
+        This corresponds to the number of unit for the last layer.
+    """
+
+    def __init__(self, observation_space: spaces.Box, features_dim: int = 256, model_name= 'distilbert-base-uncased'):
+        super().__init__(observation_space, features_dim)
+
+        self.llm = LLM(model_name,features_dim)
+        self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
+
+        self.to(self.device)
+
+    def forward(self, observations: T.Tensor) -> T.Tensor:
+        locations = observations.cpu().squeeze().numpy()
+        prompt = ""
+        for i, loc in enumerate(locations):
+            prompt += f"Location {i + 1}: ({locations[i, 0]:.2f},{locations[i, 1]:.2f},{locations[i, 2]:.2f}), "
+        out = self.llm(prompt)
+        return out
+
+
+
+
+
 if __name__ == "__main__":
     env = LOS_Env(16,200)
     check_env(env, warn=True)
+
+    policy_kwargs = dict(
+        features_extractor_class=LLM_FE,
+        features_extractor_kwargs=dict(features_dim=128),
+    )
+    model = SAC("MlpPolicy", env, policy_kwargs=policy_kwargs, verbose=1)
+    model.learn(1000)

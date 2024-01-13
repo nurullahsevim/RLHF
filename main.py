@@ -3,7 +3,7 @@ from datasets import Dataset
 from datasets import IterableDataset
 import torch
 import matplotlib.pyplot as plt
-from model import RegressionModel
+from model import LLM
 from transformers import T5Tokenizer, T5ForConditionalGeneration, AutoTokenizer
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler
 from torch.optim import AdamW,Adam
@@ -12,7 +12,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 import os,sys
-from wireless import LOS_Env
+from wireless_torch import LOS_Env
 from transformers import AutoModelForSequenceClassification
 
 
@@ -28,7 +28,7 @@ if __name__ == '__main__':
         device = torch.device("cpu")
     model_name = 'distilbert-base-uncased' #'bert-base-uncased' #"google/flan-t5-base"
     # model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2)
-    model = RegressionModel(model_name,2)
+    model = LLM(model_name,2)
     tokenizer = AutoTokenizer.from_pretrained(model_name)
 
     model = model.to(device)
@@ -51,7 +51,7 @@ if __name__ == '__main__':
     if not os.path.exists(model_checkpoint_dir):
         os.mkdir(model_checkpoint_dir)
 
-    figs_dir = os.path.join(log_dir, 'figs/run17')
+    figs_dir = os.path.join(log_dir, 'figs/run18')
     if not os.path.exists(figs_dir):
         os.makedirs(figs_dir)
 
@@ -75,7 +75,7 @@ if __name__ == '__main__':
         for episode in tqdm(range(test_eps)):
             model.eval()
             mean = np.random.uniform(low=-250, high=250)
-            env = LOS_Env(16, mean, device)
+            env = LOS_Env(16, mean,device)
             prompt = env.get_prompt()
             # labels = torch.tensor(labels, dtype=torch.float32)
             # labels = labels.to(device)
