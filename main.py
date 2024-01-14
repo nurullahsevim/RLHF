@@ -39,11 +39,11 @@ if __name__ == '__main__':
     total_episodes = 300
     test_eps = 100
 
-    log_dir = f'logs'
+    log_dir = f'../logs'
     if not os.path.exists(log_dir):
         os.mkdir(log_dir)
 
-    log_dir = f'logs/{model_name}'
+    log_dir = f'../logs/{model_name}'
     if not os.path.exists(log_dir):
         os.mkdir(log_dir)
 
