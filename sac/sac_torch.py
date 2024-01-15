@@ -8,8 +8,8 @@ from networks import ActorNetwork, CriticNetwork, ValueNetwork
 
 
 class Agent():
-    def __init__(self, model_name, alpha=0.00003, beta=0.00003, input_dims=[16],
-                 env=None, gamma=0.99, n_actions=2, max_size=1000000, tau=0.005,
+    def __init__(self, model_name, alpha=0.00003, beta=0.00003, input_dims=[1,1206,1476],
+                 env=None, gamma=0.99, n_actions=2, max_size=1000, tau=0.005,
                  layer1_size=256, layer2_size=256, batch_size=256, reward_scale=2):
         self.gamma = gamma
         self.tau = tau
@@ -19,7 +19,7 @@ class Agent():
         self.n_actions = n_actions
 
         self.actor = ActorNetwork(self.model_name, alpha, input_dims, n_actions=n_actions,
-                                  name='actor', max_action=500)
+                                  name='actor', max_action=600)
         self.critic_1 = CriticNetwork(beta, input_dims, n_actions=n_actions,
                                       name='critic_1')
         self.critic_2 = CriticNetwork(beta, input_dims, n_actions=n_actions,
@@ -35,8 +35,8 @@ class Agent():
 
         return actions.cpu().detach().numpy()[0]
 
-    def remember(self, state, prompt, action, reward, new_state):
-        self.memory.store_transition(state, prompt, action, reward, new_state)
+    def remember(self, state, prompt, action, reward, new_state,done):
+        self.memory.store_transition(state, prompt, action, reward, new_state,done)
 
     def update_network_parameters(self, tau=None):
         if tau is None:
@@ -71,16 +71,17 @@ class Agent():
         self.critic_2.load_checkpoint()
 
     def learn(self):
-        if self.memory.mem_cntr < self.batch_size:
+        if self.memory.mem_cntr < 20:
             return
 
-        state, prompt, action, reward, new_state = \
+        state, prompt, action, reward, new_state,done = \
             self.memory.sample_buffer(self.batch_size)
 
         reward = T.tensor(reward, dtype=T.float).to(self.actor.device)
         state_ = T.tensor(new_state, dtype=T.float).to(self.actor.device)
         state = T.tensor(state, dtype=T.float).to(self.actor.device)
         action = T.tensor(action, dtype=T.float).to(self.actor.device)
+        done = T.tensor(done).to(self.actor.device)
 
         value = self.value(state).view(-1)
         value_ = self.target_value(state_).view(-1)

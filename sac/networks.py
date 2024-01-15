@@ -26,8 +26,24 @@ class CriticNetwork(nn.Module):
         # self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
         # self.q = nn.Linear(self.fc2_dims, 1)
 
-        self.fc1 = nn.Linear(self.input_dims[0] + n_actions, self.fc1_dims)
-        self.q = nn.Linear(self.fc1_dims, 1)
+        self.cnn = nn.Sequential(
+            nn.Conv2d(1, 2, kernel_size=8, stride=4, padding=0),
+            nn.ReLU(),
+            nn.Conv2d(2, 4, kernel_size=8, stride=4, padding=0),
+            nn.ReLU(),
+            nn.Flatten(),
+        )
+
+        # Compute shape by doing one forward pass
+        with T.no_grad():
+            n_flatten = self.cnn(
+                T.zeros(1,1,1206,1476).float()
+            ).shape[1]
+
+        self.linear = nn.Sequential(nn.Linear(n_flatten, fc1_dims), nn.ReLU())
+
+        # self.fc1 = nn.Linear(self.input_dims[0] + n_actions, self.fc1_dims)
+        self.q = nn.Linear(self.fc1_dims+n_actions, 1)
 
         self.optimizer = optim.AdamW(self.parameters(), lr=beta)
         self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
@@ -35,12 +51,15 @@ class CriticNetwork(nn.Module):
         self.to(self.device)
 
     def forward(self, state, action):
-        action_value = self.fc1(T.cat([state, action], dim=1))
-        action_value = F.relu(action_value)
+        action_value = self.linear(self.cnn(state))
+        q = self.q(T.cat([action_value, action], dim=1))
+
+        # action_value = self.fc1(T.cat([state, action], dim=1))
+        # action_value = F.relu(action_value)
         # action_value = self.fc2(action_value)
         # action_value = F.relu(action_value)
 
-        q = self.q(action_value)
+        # q = self.q(action_value)
 
         return q
 
@@ -51,7 +70,7 @@ class CriticNetwork(nn.Module):
         self.load_state_dict(T.load(self.checkpoint_file))
 
 class ValueNetwork(nn.Module):
-    def __init__(self, beta, input_dims, fc1_dims=256, fc2_dims=256,
+    def __init__(self, beta, input_dims, fc1_dims=64, fc2_dims=64,
             name='value', chkpt_dir='tmp/sac'):
         super(ValueNetwork, self).__init__()
         self.input_dims = input_dims
@@ -65,8 +84,25 @@ class ValueNetwork(nn.Module):
         # self.fc2 = nn.Linear(self.fc1_dims, fc2_dims)
         # self.v = nn.Linear(self.fc2_dims, 1)
 
-        self.fc1 = nn.Linear(*self.input_dims, self.fc1_dims)
+        # self.fc1 = nn.Linear(*self.input_dims, self.fc1_dims)
         # self.fc2 = nn.Linear(self.fc1_dims, fc2_dims)
+
+        self.cnn = nn.Sequential(
+            nn.Conv2d(1, 2, kernel_size=8, stride=4, padding=0),
+            nn.ReLU(),
+            nn.Conv2d(2, 4, kernel_size=8, stride=4, padding=0),
+            nn.ReLU(),
+            nn.Flatten(),
+        )
+
+        # Compute shape by doing one forward pass
+        with T.no_grad():
+            n_flatten = self.cnn(
+                T.zeros(1,1,1206,1476).float()
+            ).shape[1]
+
+        self.linear = nn.Sequential(nn.Linear(26936, fc1_dims), nn.ReLU())
+
         self.v = nn.Linear(self.fc1_dims, 1)
 
         self.optimizer = optim.AdamW(self.parameters(), lr=beta)
@@ -75,11 +111,11 @@ class ValueNetwork(nn.Module):
         self.to(self.device)
 
     def forward(self, state):
-        state_value = self.fc1(state)
-        state_value = F.relu(state_value)
+        # state_value = self.fc1(state)
+        # state_value = F.relu(state_value)
         # state_value = self.fc2(state_value)
         # state_value = F.relu(state_value)
-
+        state_value = self.linear(self.cnn(state))
         v = self.v(state_value)
 
         return v

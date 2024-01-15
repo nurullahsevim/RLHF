@@ -81,7 +81,7 @@ class sionna_env(gym.Env):
                                           num_samples=int(1e6))  # Reduce if your hardware does not have enough memory
 
         cm_db = 10. * log10(self.cm._value[0, :, :])
-        idx = tf.where(tf.math.logical_and(cm_db > -200,
+        idx = tf.where(tf.math.logical_and(cm_db > -400,
                                            cm_db < 0))
         # Randomly permute indices
         idx = tf.random.shuffle(idx)
@@ -128,20 +128,23 @@ class sionna_env(gym.Env):
 
     def get_rssi(self):
         cm_db = 10. * log10(self.cm._value[0, :, :])
-        cm_db = tf.where(cm_db < -200, -200, cm_db)
+        cm_db = tf.where(cm_db < -400, -400, cm_db)
         rssi = tf.gather_nd(cm_db, self.rx_idx)
         return rssi.numpy().astype(np.float32)
 
     def get_cm_db(self):
         cm_db = 10. * log10(self.cm._value)
-        cm_db = tf.where(cm_db < -200, -200, cm_db)
+        cm_db = tf.where(cm_db < -400, -400, cm_db)
         return cm_db.numpy().astype(np.float32)
 
     def get_prompt(self):
         locations = self.ue_pos
+        idxs = self.rx_idx
+        cm_db = self.get_cm_db()[0]
         prompt = ""
         for i, loc in enumerate(locations):
-            prompt += f"Location {i + 1}: ({locations[i, 0]:.2f},{locations[i, 1]:.2f},{locations[i, 2]:.2f}), "
+            prompt += f"User at location ({locations[i, 0]:.2f},{locations[i, 1]:.2f},{locations[i, 2]:.2f}) gets {cm_db[tuple(idxs[i].numpy())]:.2f} dB signal power, "
+            # prompt += f"Location {i + 1}: ({locations[i, 0]:.2f},{locations[i, 1]:.2f},{locations[i, 2]:.2f}), "
         return prompt
 
     def reset(self, seed=None, options=None):
@@ -176,6 +179,9 @@ class sionna_env(gym.Env):
 
     def render(self):
         self.scene.render("birds_view",coverage_map=self.cm, show_devices=True, num_samples=256)
+
+    def visualize(self, dir_path, fig_num):
+        self.scene.render_to_file("birds_view",os.path.join(dir_path, f"{fig_num}.png"),coverage_map=self.cm, show_devices=True, num_samples=256,cm_vmax=0,cm_vmin=-400)
 
     def close(self):
         pass
@@ -216,11 +222,12 @@ class CustomCNN(BaseFeaturesExtractor):
 
 if __name__ == "__main__":
     env = sionna_env(16)
+    print(env.get_prompt())
     # rssi = env.get_rssi()
     # check_env(env, warn=True)
-    policy_kwargs = dict(
-        features_extractor_class=CustomCNN,
-        features_extractor_kwargs=dict(features_dim=128),
-    )
-    model = SAC("CnnPolicy", env=env, policy_kwargs=policy_kwargs, verbose=1)
-    model.learn(10)
+    # policy_kwargs = dict(
+    #     features_extractor_class=CustomCNN,
+    #     features_extractor_kwargs=dict(features_dim=128),
+    # )
+    # model = SAC("CnnPolicy", env=env, policy_kwargs=policy_kwargs, verbose=1)
+    # model.learn(10)

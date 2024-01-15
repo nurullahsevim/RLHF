@@ -106,19 +106,28 @@ class sionna_env:
 
     def get_rssi(self):
         cm_db = 10. * log10(self.cm._value[0, :, :])
-        cm_db = tf.where(cm_db < -200, -200, cm_db)
+        cm_db = tf.where(cm_db < -400, -400, cm_db)
         rssi = tf.gather_nd(cm_db, self.rx_idx)
         return rssi
 
+    def get_state(self):
+        cm_db = 10. * log10(self.cm._value[0, :, :])
+        cm_db = tf.where(cm_db < -400, -400, cm_db)
+        return cm_db
+
     def visualize(self, dir_path, fig_num):
-        self.scene.render_to_file("birds_view",os.path.join(dir_path, f"{fig_num}.png"),coverage_map=self.cm, show_devices=True, num_samples=256,cm_vmax=0,cm_vmin=-200)
+        self.scene.render_to_file("birds_view",os.path.join(dir_path, f"{fig_num}.png"),coverage_map=self.cm, show_devices=True, num_samples=256,cm_vmax=0,cm_vmin=-400)
 
     def get_prompt(self):
         locations = self.ue_pos
+        idxs = self.rx_idx
+        cm_db = self.get_state()
         prompt = ""
-        for i,loc in enumerate(locations):
-            prompt += f"Location {i+1}: ({locations[i,0]:.2f},{locations[i,1]:.2f},{locations[i,2]:.2f}), "
+        for i, loc in enumerate(locations):
+            prompt += f"User at location ({locations[i, 0]:.2f},{locations[i, 1]:.2f},{locations[i, 2]:.2f}) gets {cm_db[tuple(idxs[i].numpy())]:.2f} dB signal power, "
+            # prompt += f"Location {i + 1}: ({locations[i, 0]:.2f},{locations[i, 1]:.2f},{locations[i, 2]:.2f}), "
         return prompt
+
 
 if __name__ == '__main__':
     env = sionna_env(16)

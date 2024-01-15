@@ -49,7 +49,7 @@ if __name__ == '__main__':
     if not os.path.exists(model_checkpoint_dir):
         os.mkdir(model_checkpoint_dir)
 
-    figs_dir = os.path.join(log_dir, 'figs/run24')
+    figs_dir = os.path.join(log_dir, 'figs/run30')
     if not os.path.exists(figs_dir):
         os.makedirs(figs_dir)
 
@@ -69,7 +69,7 @@ if __name__ == '__main__':
 
     def eval(model, test_eps):
         for episode in tqdm(range(test_eps)):
-            env = sionna_env(64)
+            env = sionna_env(16)
             total_loss = 0
             prompt = env.get_prompt()
             encodings = tokenizer(prompt, max_length=512, padding=False, truncation=True, return_tensors="tf")
