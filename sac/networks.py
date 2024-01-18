@@ -11,7 +11,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 
 
 class CriticNetwork(nn.Module):
-    def __init__(self, beta, input_dims, n_actions, fc1_dims=64, fc2_dims=64,
+    def __init__(self, beta, input_dims, n_actions, fc1_dims=256, fc2_dims=128,
             name='critic', chkpt_dir='tmp/sac'):
         super(CriticNetwork, self).__init__()
         self.input_dims = input_dims
@@ -40,10 +40,10 @@ class CriticNetwork(nn.Module):
                 T.zeros(1,1,1206,1476).float()
             ).shape[1]
 
-        self.linear = nn.Sequential(nn.Linear(n_flatten, fc1_dims), nn.ReLU())
+        self.linear = nn.Sequential(nn.Linear(n_flatten, fc1_dims), nn.ReLU(),nn.Linear(fc1_dims, fc2_dims),nn.ReLU(),)
 
         # self.fc1 = nn.Linear(self.input_dims[0] + n_actions, self.fc1_dims)
-        self.q = nn.Linear(self.fc1_dims+n_actions, 1)
+        self.q = nn.Linear(self.fc2_dims+n_actions, 1)
 
         self.optimizer = optim.AdamW(self.parameters(), lr=beta)
         self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
@@ -51,7 +51,8 @@ class CriticNetwork(nn.Module):
         self.to(self.device)
 
     def forward(self, state, action):
-        action_value = self.linear(self.cnn(state))
+        action_value = self.cnn(state)
+        action_value = self.linear(action_value)
         q = self.q(T.cat([action_value, action], dim=1))
 
         # action_value = self.fc1(T.cat([state, action], dim=1))
@@ -70,7 +71,7 @@ class CriticNetwork(nn.Module):
         self.load_state_dict(T.load(self.checkpoint_file))
 
 class ValueNetwork(nn.Module):
-    def __init__(self, beta, input_dims, fc1_dims=64, fc2_dims=64,
+    def __init__(self, beta, input_dims, fc1_dims=256, fc2_dims=128,
             name='value', chkpt_dir='tmp/sac'):
         super(ValueNetwork, self).__init__()
         self.input_dims = input_dims
@@ -101,9 +102,9 @@ class ValueNetwork(nn.Module):
                 T.zeros(1,1,1206,1476).float()
             ).shape[1]
 
-        self.linear = nn.Sequential(nn.Linear(26936, fc1_dims), nn.ReLU())
+        self.linear = nn.Sequential(nn.Linear(n_flatten, fc1_dims), nn.ReLU(),nn.Linear(fc1_dims, fc2_dims),nn.ReLU(),)
 
-        self.v = nn.Linear(self.fc1_dims, 1)
+        self.v = nn.Linear(self.fc2_dims, 1)
 
         self.optimizer = optim.AdamW(self.parameters(), lr=beta)
         self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
@@ -115,7 +116,8 @@ class ValueNetwork(nn.Module):
         # state_value = F.relu(state_value)
         # state_value = self.fc2(state_value)
         # state_value = F.relu(state_value)
-        state_value = self.linear(self.cnn(state))
+        state_value = self.cnn(state)
+        state_value = self.linear(state_value)
         v = self.v(state_value)
 
         return v

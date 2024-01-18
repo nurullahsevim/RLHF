@@ -49,7 +49,8 @@ class sionna_env:
         #define the transmitter with randomly initialized location
         tx = Transmitter(name="tx",
                          position=[center[0], center[0], 50],
-                         orientation=[0, 0, 0])
+                         orientation=[0, 0, 0],
+                         color=[0, 0, 0])
         self.scene.add(tx)
 
         #choose random locations for receivers
@@ -70,10 +71,29 @@ class sionna_env:
         # Sample batch_size random positions
         self.ue_pos = tf.gather_nd(self.cm.cell_centers, self.rx_idx)
 
-        for i in range(N):
+        for i in range(N-10):
             rx = Receiver(name=f"rx-{i}",
                           position=self.ue_pos[i],  # Random position sampled from coverage map
                           color=[1,0,0])
+            self.scene.add(rx)
+
+        dens_poses = [
+            (740,800),
+            (750,810),
+            (760,820),
+            (770,830),
+            (780,840),
+            (740,850),
+            (750,860),
+            (760,870),
+            (770,880),
+            (750,840)
+        ]
+
+        for i in range(len(dens_poses)):
+            rx = Receiver(name=f"rx-{i}-dens",
+                          position=self.cm.cell_centers[dens_poses[i]],  # Random position sampled from coverage map
+                          color=[1, 0, 0])
             self.scene.add(rx)
 
     def initialize_transmitter(self, loc):
@@ -93,7 +113,8 @@ class sionna_env:
 
         tx = Transmitter(name="tx",
                          position=[tr_loc_x, tr_loc_y, 50],
-                         orientation=[0, 0, 0])
+                         orientation=[0, 0, 0],
+                         color=[0,0,0])
         self.scene.remove("tx")
         self.scene.add(tx)
 

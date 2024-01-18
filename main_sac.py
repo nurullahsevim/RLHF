@@ -30,7 +30,7 @@ if __name__ == '__main__':
         device = torch.device("cpu")
     model_name = 'distilbert-base-uncased' #'bert-base-uncased' #"google/flan-t5-base"
 
-    agent = Agent(model_name,alpha=0.0003, beta=0.00001,batch_size=4)
+    agent = Agent(model_name,alpha=0.00003, beta=0.00003,batch_size=4)
     episode_length = 200
     total_episodes = 1
     test_eps = 5
@@ -51,7 +51,7 @@ if __name__ == '__main__':
     if not os.path.exists(model_checkpoint_dir):
         os.mkdir(model_checkpoint_dir)
 
-    figs_dir = os.path.join(log_dir, 'figs/run29')
+    figs_dir = os.path.join(log_dir, 'figs/run34')
     if not os.path.exists(figs_dir):
         os.makedirs(figs_dir)
 
@@ -80,12 +80,13 @@ if __name__ == '__main__':
         prompt = env.get_prompt()
         score = 0
         for step_num in range(episode_length):
-            obs = env.get_cm_db()
+            obs = env.get_cm_db()/400
             action = agent.choose_action(prompt)
             env.initialize_transmitter(action)
-            obs_ = env.get_cm_db()
+            obs_ = env.get_cm_db()/400
             # observation_, reward, done, info = env.step(action)
-            reward = (np.mean(obs_))
+            rssi = env.get_rssi()
+            reward = np.mean(rssi)/40
             rewards.append(reward)
             score += reward/episode_length
             agent.remember(obs, prompt, action, reward, obs_,False)

@@ -69,7 +69,8 @@ class sionna_env(gym.Env):
         # define the transmitter with randomly initialized location
         tx = Transmitter(name="tx",
                          position=[center[0], center[0], 50],
-                         orientation=[0, 0, 0])
+                         orientation=[0, 0, 0],
+                         color=[0,0,0])
         self.scene.add(tx)
 
         # choose random locations for receivers
@@ -90,9 +91,28 @@ class sionna_env(gym.Env):
         # Sample batch_size random positions
         self.ue_pos = tf.gather_nd(self.cm.cell_centers, self.rx_idx)
 
-        for i in range(N):
+        for i in range(N - 10):
             rx = Receiver(name=f"rx-{i}",
                           position=self.ue_pos[i],  # Random position sampled from coverage map
+                          color=[1, 0, 0])
+            self.scene.add(rx)
+
+        dens_poses = [
+            (740, 800),
+            (750, 810),
+            (760, 820),
+            (770, 830),
+            (780, 840),
+            (740, 850),
+            (750, 860),
+            (760, 870),
+            (770, 880),
+            (750, 840)
+        ]
+
+        for i in range(len(dens_poses)):
+            rx = Receiver(name=f"rx-{i}-dens",
+                          position=self.cm.cell_centers[dens_poses[i]],  # Random position sampled from coverage map
                           color=[1, 0, 0])
             self.scene.add(rx)
 
@@ -115,7 +135,8 @@ class sionna_env(gym.Env):
 
         tx = Transmitter(name="tx",
                          position=[tr_loc_x, tr_loc_y, 50],
-                         orientation=[0, 0, 0])
+                         orientation=[0, 0, 0],
+                         color=[0,0,0])
 
         self.scene.add(tx)
 
@@ -185,38 +206,6 @@ class sionna_env(gym.Env):
 
     def close(self):
         pass
-
-
-
-class CustomCNN(BaseFeaturesExtractor):
-    """
-    :param observation_space: (gym.Space)
-    :param features_dim: (int) Number of features extracted.
-        This corresponds to the number of unit for the last layer.
-    """
-
-    def __init__(self, observation_space: spaces.Box, features_dim: int = 128):
-        super().__init__(observation_space, features_dim)
-        # We assume CxHxW images (channels first)
-        # Re-ordering will be done by pre-preprocessing or wrapper
-        n_input_channels = observation_space.shape[0]
-        self.cnn = nn.Sequential(
-            nn.Conv2d(n_input_channels, 1, kernel_size=8, stride=8, padding=0),
-            nn.ReLU(),
-            nn.Flatten(),
-        )
-
-        # Compute shape by doing one forward pass
-        with T.no_grad():
-            n_flatten = self.cnn(
-                T.as_tensor(observation_space.sample()[None]).float()
-            ).shape[1]
-
-        self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim), nn.ReLU())
-
-    def forward(self, observations: T.Tensor) -> T.Tensor:
-        return self.linear(self.cnn(observations))
-
 
 
 

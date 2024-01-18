@@ -19,7 +19,7 @@ class Agent():
         self.n_actions = n_actions
 
         self.actor = ActorNetwork(self.model_name, alpha, input_dims, n_actions=n_actions,
-                                  name='actor', max_action=600)
+                                  name='actor', max_action=500)
         self.critic_1 = CriticNetwork(beta, input_dims, n_actions=n_actions,
                                       name='critic_1')
         self.critic_2 = CriticNetwork(beta, input_dims, n_actions=n_actions,
@@ -71,7 +71,7 @@ class Agent():
         self.critic_2.load_checkpoint()
 
     def learn(self):
-        if self.memory.mem_cntr < 20:
+        if self.memory.mem_cntr < 50:
             return
 
         state, prompt, action, reward, new_state,done = \

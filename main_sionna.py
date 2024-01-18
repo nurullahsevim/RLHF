@@ -79,7 +79,7 @@ if __name__ == '__main__':
             pred = model(inputs)
 
             # Handling 'env' logic outside loss function
-            loc = 600 * tf.squeeze(pred)
+            loc = 500 * tf.squeeze(pred)
             env.initialize_transmitter(loc)
             rssi = env.get_rssi()
 
@@ -99,7 +99,7 @@ if __name__ == '__main__':
 
         model.compile(optimizer=optimizer, loss=loss_fn)
         total_loss = 0
-        env = sionna_env(64)
+        env = sionna_env(16)
         episode_rewards = np.zeros((0,))
         env.visualize(os.path.join(trainfigs_dir, f'{episode}'), 0)
         for step_num in tqdm(range(episode_length)):
@@ -122,7 +122,9 @@ if __name__ == '__main__':
                 episode_rewards = np.append(episode_rewards, -loss.numpy())
             grads = tape.gradient(loss, model.trainable_variables)
             optimizer.apply_gradients(zip(grads, model.trainable_variables))
-
+        plt.plot(episode_rewards)
+        plt.savefig(os.path.join(trainfigs_dir, f'{episode}') + "/rewards.png", dpi=300)
+        plt.close()
         reward_var.append(np.var(episode_rewards))
         print("Episode:", episode, "Initial Reward: ", episode_rewards[0], "Last Reward:", episode_rewards[-1])
     plt.plot(reward_var)
