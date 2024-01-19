@@ -1,18 +1,17 @@
 import os,sys
 
-sys.path.insert(1, r'C:/Users/Nurullah/Desktop/TAMU/Research/RLHF/sac')
+sys.path.insert(1, r'C:/Users/Nurullah/Desktop/TAMU/Research/RLHF/ddpg')
 from generate_data import MyDataset
 from datasets import Dataset
 from datasets import IterableDataset
 import torch
-from sac_torch import Agent
+from ddpg_torch import Agent
 import matplotlib.pyplot as plt
 from model import LLM
 from transformers import T5Tokenizer, T5ForConditionalGeneration, AutoTokenizer
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler
 from torch.optim import AdamW,Adam
 import torch.nn as nn
-from utils import plot_learning_curve
 import numpy as np
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
@@ -30,7 +29,8 @@ if __name__ == '__main__':
         device = torch.device("cpu")
     model_name = 'distilbert-base-uncased' #'bert-base-uncased' #"google/flan-t5-base"
 
-    agent = Agent(model_name,alpha=0.00003, beta=0.00003,batch_size=4)
+    agent = Agent(model_name,alpha=0.000025, beta=0.00025, input_dims=[1,1206,1476], tau=0.001, env=None,
+                  batch_size=4, layer1_size=400, layer2_size=300, n_actions=2)
     episode_length = 200
     total_episodes = 1
     test_eps = 5
@@ -39,11 +39,11 @@ if __name__ == '__main__':
     if not os.path.exists(log_dir):
         os.mkdir(log_dir)
 
-    log_dir = f'../logs/sac'
+    log_dir = f'../logs/ddpg'
     if not os.path.exists(log_dir):
         os.mkdir(log_dir)
 
-    log_dir = f'../logs/sac/{model_name}'
+    log_dir = f'../logs/ddpg/{model_name}'
     if not os.path.exists(log_dir):
         os.mkdir(log_dir)
 
@@ -51,7 +51,7 @@ if __name__ == '__main__':
     if not os.path.exists(model_checkpoint_dir):
         os.mkdir(model_checkpoint_dir)
 
-    figs_dir = os.path.join(log_dir, 'figs/run35')
+    figs_dir = os.path.join(log_dir, 'figs/run36')
     if not os.path.exists(figs_dir):
         os.makedirs(figs_dir)
 
@@ -75,26 +75,31 @@ if __name__ == '__main__':
 
         if not os.path.exists(os.path.join(trainfigs_dir,f'{episode}')):
             os.mkdir(os.path.join(trainfigs_dir,f'{episode}'))
+
         rewards = []
         score = 0
         for step_num in range(episode_length):
             prompt = env.get_prompt()
             obs = env.get_cm_db()/400
             action = agent.choose_action(prompt)
-            env.initialize_transmitter(action)
+            env.initialize_transmitter(action*500)
+            new_prompt = env.get_prompt()
             obs_ = env.get_cm_db()/400
             # observation_, reward, done, info = env.step(action)
             rssi = env.get_rssi()
             reward = np.mean(rssi)/40
             rewards.append(reward)
             score += reward/episode_length
-            agent.remember(obs, prompt, action, reward, obs_,False)
+            agent.remember(obs, prompt, action, reward, obs_,new_prompt,False)
             env.visualize(os.path.join(trainfigs_dir,f'{episode}'),step_num)
-            rnd = np.random.uniform()
-            if not load_checkpoint and rnd<0.9:
-                agent.learn()
+            agent.learn()
         score_history.append(score)
         avg_score = np.mean(score_history[-100:])
+
+        if avg_score > best_score:
+            best_score = avg_score
+            if not load_checkpoint:
+                agent.save_models()
 
         print('episode ', episode, 'score %.1f' % score, 'avg_score %.1f' % avg_score)
         plt.plot(rewards)

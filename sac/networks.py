@@ -165,12 +165,12 @@ class ActorNetwork(nn.Module):
         last_hidden_states = outputs.last_hidden_state
         prob = last_hidden_states[:, 0, :]  # Taking the [CLS] token's representation
         # prob = self.fc1(state)
-        # prob = F.relu(prob)
+        prob = F.relu(prob)
         # prob = self.fc2(prob)
         # prob = F.relu(prob)
 
         mu = self.mu(prob)
-        sigma = self.sigma(prob)
+        sigma = F.relu(self.sigma(prob))
 
         sigma = T.clamp(sigma, min=self.reparam_noise, max=1)
 
