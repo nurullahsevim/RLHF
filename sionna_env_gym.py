@@ -76,47 +76,71 @@ class sionna_env(gym.Env):
         # choose random locations for receivers
         self.cm = self.scene.coverage_map(max_depth=5,
                                           diffraction=True,  # Disable to see the effects of diffraction
-                                          cm_cell_size=(1., 1.),  # Grid size of coverage map cells in m
+                                          cm_cell_size=(5., 5.),  # Grid size of coverage map cells in m
                                           combining_vec=None,
                                           precoding_vec=None,
-                                          num_samples=int(1e6))  # Reduce if your hardware does not have enough memory
+                                          num_samples=int(1e7))  # Reduce if your hardware does not have enough memory
 
         cm_db = 10. * log10(self.cm._value[0, :, :])
+
+
+        dens_poses = [
+            [740, 800],
+            [750, 810],
+            [760, 820],
+            [770, 830],
+            [780, 840],
+            [740, 850],
+            [750, 860],
+            [760, 870],
+            [770, 880],
+            [750, 840]
+        ]
+
+        dens_poses2 = [
+            [880, 940],
+            [880, 950],
+            [880, 960],
+            [880, 970],
+            [880, 980],
+            [900, 940],
+            [900, 950],
+            [900, 960],
+            [900, 970],
+            [900, 980]
+        ]
+
+        dens_poses_cellsize5 = [
+            [70, 110],
+            [70, 113],
+            [70, 116],
+            [70, 119],
+            [70, 122],
+            [74, 110],
+            [74, 113],
+            [74, 116],
+            [74, 119],
+            [74, 122],
+        ]
+
         idx = tf.where(tf.math.logical_and(cm_db > -400,
                                            cm_db < 0))
         # Randomly permute indices
         idx = tf.random.shuffle(idx)
-        self.rx_idx = idx[:N]
+        self.rx_idx = idx[:N - 10].numpy().tolist() + dens_poses_cellsize5
+
 
         # Sample batch_size random positions
         self.ue_pos = tf.gather_nd(self.cm.cell_centers, self.rx_idx)
 
-        for i in range(N - 10):
+        for i in range(N):
             rx = Receiver(name=f"rx-{i}",
                           position=self.ue_pos[i],  # Random position sampled from coverage map
                           color=[1, 0, 0])
             self.scene.add(rx)
 
-        dens_poses = [
-            (740, 800),
-            (750, 810),
-            (760, 820),
-            (770, 830),
-            (780, 840),
-            (740, 850),
-            (750, 860),
-            (760, 870),
-            (770, 880),
-            (750, 840)
-        ]
 
-        for i in range(len(dens_poses)):
-            rx = Receiver(name=f"rx-{i}-dens",
-                          position=self.cm.cell_centers[dens_poses[i]],  # Random position sampled from coverage map
-                          color=[1, 0, 0])
-            self.scene.add(rx)
-
-    def initialize_transmitter(self,loc):
+    def initialize_transmitter(self,loc,height,orientation=[0, 0, 0]):
         if loc[0] < self.left:
             tr_loc_x = self.left
         elif loc[0] > self.right:
@@ -134,18 +158,18 @@ class sionna_env(gym.Env):
         self.scene.remove("tx")
 
         tx = Transmitter(name="tx",
-                         position=[tr_loc_x, tr_loc_y, 50],
-                         orientation=[0, 0, 0],
+                         position=[tr_loc_x, tr_loc_y, height],
+                         orientation=orientation,
                          color=[0,0,0])
 
         self.scene.add(tx)
 
         self.cm = self.scene.coverage_map(max_depth=5,
                                           diffraction=True,  # Disable to see the effects of diffraction
-                                          cm_cell_size=(1., 1.),  # Grid size of coverage map cells in m
+                                          cm_cell_size=(5., 5.),  # Grid size of coverage map cells in m
                                           combining_vec=None,
                                           precoding_vec=None,
-                                          num_samples=int(1e6))  # Reduce if your hardware does not have enough memory
+                                          num_samples=int(1e7))  # Reduce if your hardware does not have enough memory
 
     def get_rssi(self):
         cm_db = 10. * log10(self.cm._value[0, :, :])
@@ -164,7 +188,7 @@ class sionna_env(gym.Env):
         cm_db = self.get_cm_db()[0]
         prompt = ""
         for i, loc in enumerate(locations):
-            prompt += f"User at location ({locations[i, 0]:.2f},{locations[i, 1]:.2f},{locations[i, 2]:.2f}) gets {cm_db[tuple(idxs[i].numpy())]:.2f} dB signal power, "
+            prompt += f"User at location ({locations[i, 0]:.2f},{locations[i, 1]:.2f},{locations[i, 2]:.2f}) gets {cm_db[tuple(idxs[i])]:.2f} dB signal power, "
             # prompt += f"Location {i + 1}: ({locations[i, 0]:.2f},{locations[i, 1]:.2f},{locations[i, 2]:.2f}), "
         return prompt
 

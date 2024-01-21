@@ -93,7 +93,7 @@ class CriticNetwork(nn.Module):
         # Compute shape by doing one forward pass
         with T.no_grad():
             n_flatten = self.cnn(
-                T.zeros(1, 1, 1206, 1476).float()
+                T.zeros(1, 1, 242, 296).float()
             ).shape[1]
 
 
@@ -106,18 +106,18 @@ class CriticNetwork(nn.Module):
         #self.fc1.bias.data.uniform_(-f1, f1)
         self.bn1 = nn.LayerNorm(self.fc1_dims)
 
-        self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
-        f2 = 1./np.sqrt(self.fc2.weight.data.size()[0])
-        #f2 = 0.002
-        T.nn.init.uniform_(self.fc2.weight.data, -f2, f2)
-        T.nn.init.uniform_(self.fc2.bias.data, -f2, f2)
-        #self.fc2.weight.data.uniform_(-f2, f2)
-        #self.fc2.bias.data.uniform_(-f2, f2)
-        self.bn2 = nn.LayerNorm(self.fc2_dims)
+        # self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
+        # f2 = 1./np.sqrt(self.fc2.weight.data.size()[0])
+        # #f2 = 0.002
+        # T.nn.init.uniform_(self.fc2.weight.data, -f2, f2)
+        # T.nn.init.uniform_(self.fc2.bias.data, -f2, f2)
+        # #self.fc2.weight.data.uniform_(-f2, f2)
+        # #self.fc2.bias.data.uniform_(-f2, f2)
+        # self.bn2 = nn.LayerNorm(self.fc2_dims)
 
-        self.action_value = nn.Linear(self.n_actions, self.fc2_dims)
+        self.action_value = nn.Linear(self.n_actions, self.fc1_dims)
         f3 = 0.003
-        self.q = nn.Linear(self.fc2_dims, 1)
+        self.q = nn.Linear(self.fc1_dims, 1)
         T.nn.init.uniform_(self.q.weight.data, -f3, f3)
         T.nn.init.uniform_(self.q.bias.data, -f3, f3)
         #self.q.weight.data.uniform_(-f3, f3)
@@ -132,9 +132,9 @@ class CriticNetwork(nn.Module):
         state_value = self.cnn(state)
         state_value = self.fc1(state_value)
         state_value = self.bn1(state_value)
-        state_value = F.relu(state_value)
-        state_value = self.fc2(state_value)
-        state_value = self.bn2(state_value)
+        # state_value = F.relu(state_value)
+        # state_value = self.fc2(state_value)
+        # state_value = self.bn2(state_value)
 
         action_value = F.relu(self.action_value(action))
         state_action_value = F.relu(T.add(state_value, action_value))
