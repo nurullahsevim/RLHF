@@ -93,7 +93,7 @@ class CriticNetwork(nn.Module):
         # Compute shape by doing one forward pass
         with T.no_grad():
             n_flatten = self.cnn(
-                T.zeros(1, 1, 242, 296).float()
+                T.zeros(1, 1, 1206, 1476).float()
             ).shape[1]
 
 

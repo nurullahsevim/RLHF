@@ -1,6 +1,6 @@
 import os,sys
 
-sys.path.insert(1, r'C:\Users\nurullahsevim\OneDrive - Texas A&M University\Desktop\research\RLHF\ddpg')
+sys.path.insert(1, r'C:\Users\Nurullah\Desktop\TAMU\Research\RLHF\ddpg')
 from generate_data import MyDataset
 from datasets import Dataset
 from datasets import IterableDataset
@@ -29,7 +29,7 @@ if __name__ == '__main__':
         device = torch.device("cpu")
     model_name = 'distilbert-base-uncased' #'bert-base-uncased' #"google/flan-t5-base"
 
-    agent = Agent(model_name,alpha=0.000025, beta=0.00025, input_dims=[1,242,296], tau=0.001, env=None,
+    agent = Agent(model_name,alpha=0.001, beta=0.01, input_dims=[1,1206,1476], tau=0.001, env=None,
                   batch_size=4, layer1_size=256, layer2_size=128, n_actions=6)
     episode_length = 500
     total_episodes = 1
@@ -51,7 +51,7 @@ if __name__ == '__main__':
     if not os.path.exists(model_checkpoint_dir):
         os.mkdir(model_checkpoint_dir)
 
-    figs_dir = os.path.join(log_dir, 'figs/run41')
+    figs_dir = os.path.join(log_dir, 'figs/run42')
     if not os.path.exists(figs_dir):
         os.makedirs(figs_dir)
 

@@ -18,6 +18,9 @@ import time
 from sionna.rt import load_scene, Transmitter, Receiver, PlanarArray, Camera
 from sionna.utils import expand_to_rank, log10
 
+from transformers import AutoModel, AutoConfig, AutoTokenizer
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
+
 
 
 
@@ -74,17 +77,17 @@ class sionna_env(gym.Env):
         self.scene.add(tx)
 
         # choose random locations for receivers
-        self.cm = self.scene.coverage_map(max_depth=5,
+        self.cm = self.scene.coverage_map(max_depth=2,
                                           diffraction=True,  # Disable to see the effects of diffraction
-                                          cm_cell_size=(5., 5.),  # Grid size of coverage map cells in m
+                                          cm_cell_size=(1., 1.),  # Grid size of coverage map cells in m
                                           combining_vec=None,
                                           precoding_vec=None,
-                                          num_samples=int(1e7))  # Reduce if your hardware does not have enough memory
+                                          num_samples=int(1e6))  # Reduce if your hardware does not have enough memory
 
         cm_db = 10. * log10(self.cm._value[0, :, :])
 
 
-        dens_poses = [
+        dens_poses1 = [
             [740, 800],
             [750, 810],
             [760, 820],
@@ -110,24 +113,24 @@ class sionna_env(gym.Env):
             [900, 980]
         ]
 
-        dens_poses_cellsize5 = [
-            [70, 110],
-            [70, 113],
-            [70, 116],
-            [70, 119],
-            [70, 122],
-            [74, 110],
-            [74, 113],
-            [74, 116],
-            [74, 119],
-            [74, 122],
+        dens_poses3 = [
+            (380, 550),
+            (380, 565),
+            (380, 580),
+            (380, 595),
+            (380, 610),
+            (360, 550),
+            (360, 565),
+            (360, 580),
+            (360, 595),
+            (360, 610),
         ]
 
         idx = tf.where(tf.math.logical_and(cm_db > -400,
                                            cm_db < 0))
         # Randomly permute indices
         idx = tf.random.shuffle(idx)
-        self.rx_idx = idx[:N - 10].numpy().tolist() + dens_poses_cellsize5
+        self.rx_idx = idx[:N - 10].numpy().tolist() + dens_poses3
 
 
         # Sample batch_size random positions
@@ -164,12 +167,12 @@ class sionna_env(gym.Env):
 
         self.scene.add(tx)
 
-        self.cm = self.scene.coverage_map(max_depth=5,
+        self.cm = self.scene.coverage_map(max_depth=2,
                                           diffraction=True,  # Disable to see the effects of diffraction
-                                          cm_cell_size=(5., 5.),  # Grid size of coverage map cells in m
+                                          cm_cell_size=(1., 1.),  # Grid size of coverage map cells in m
                                           combining_vec=None,
                                           precoding_vec=None,
-                                          num_samples=int(1e7))  # Reduce if your hardware does not have enough memory
+                                          num_samples=int(1e6))  # Reduce if your hardware does not have enough memory
 
     def get_rssi(self):
         cm_db = 10. * log10(self.cm._value[0, :, :])
@@ -189,7 +192,7 @@ class sionna_env(gym.Env):
         prompt = ""
         for i, loc in enumerate(locations):
             prompt += f"User at location ({locations[i, 0]:.2f},{locations[i, 1]:.2f},{locations[i, 2]:.2f}) gets {cm_db[tuple(idxs[i])]:.2f} dB signal power, "
-            # prompt += f"Location {i + 1}: ({locations[i, 0]:.2f},{locations[i, 1]:.2f},{locations[i, 2]:.2f}), "
+        prompt+="Optimize the received signal power for all users."
         return prompt
 
     def reset(self, seed=None, options=None):
@@ -235,7 +238,12 @@ class sionna_env(gym.Env):
 
 if __name__ == "__main__":
     env = sionna_env(16)
-    print(env.get_prompt())
+    prompt = env.get_prompt()
+    tokenizer = AutoTokenizer.from_pretrained('distilbert-base-uncased')
+    # encodings = tokenizer(prompt, max_length=512, padding=True, truncation=True, return_tensors="pt")
+    encodings = tokenizer(prompt, return_tensors="pt")
+
+    print(prompt)
     # rssi = env.get_rssi()
     # check_env(env, warn=True)
     # policy_kwargs = dict(
