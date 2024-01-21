@@ -82,7 +82,7 @@ class sionna_env(gym.Env):
                                           cm_cell_size=(1., 1.),  # Grid size of coverage map cells in m
                                           combining_vec=None,
                                           precoding_vec=None,
-                                          num_samples=int(1e6))  # Reduce if your hardware does not have enough memory
+                                          num_samples=int(2e6))  # Reduce if your hardware does not have enough memory
 
         cm_db = 10. * log10(self.cm._value[0, :, :])
 
@@ -172,7 +172,7 @@ class sionna_env(gym.Env):
                                           cm_cell_size=(1., 1.),  # Grid size of coverage map cells in m
                                           combining_vec=None,
                                           precoding_vec=None,
-                                          num_samples=int(1e6))  # Reduce if your hardware does not have enough memory
+                                          num_samples=int(2e6))  # Reduce if your hardware does not have enough memory
 
     def get_rssi(self):
         cm_db = 10. * log10(self.cm._value[0, :, :])
