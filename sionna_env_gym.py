@@ -26,8 +26,9 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 
 class sionna_env(gym.Env):
 
-    def __init__(self,N):
+    def __init__(self,N,rng=42):
         super(sionna_env, self).__init__()
+        self.rng = rng
         self.n_receivers = N
         self.step_num = 0
         self.terminal_step = 4
@@ -129,7 +130,7 @@ class sionna_env(gym.Env):
         idx = tf.where(tf.math.logical_and(cm_db > -400,
                                            cm_db < 0))
         # Randomly permute indices
-        idx = tf.random.shuffle(idx)
+        idx = tf.random.shuffle(idx,seed=self.rng)
         self.rx_idx = idx[:N - 10].numpy().tolist() + dens_poses3
 
 

@@ -158,18 +158,28 @@ class ActorNetwork(nn.Module):
         self.input_dims = input_dims
         self.fc1_dims = fc1_dims
         self.fc2_dims = fc2_dims
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-        config = AutoConfig.from_pretrained(model_name)
-        self.transformer = AutoModel.from_pretrained(self.model_name, config=config)
-        self.config = self.transformer.config
         self.n_actions = n_actions
         self.checkpoint_file = os.path.join(chkpt_dir,name+'_ddpg')
-        self.fc1 = nn.Linear(self.config.hidden_size, self.fc1_dims)
-        f1 = 1./np.sqrt(self.fc1.weight.data.size()[0])
+        self.cnn = nn.Sequential(
+            nn.Conv2d(1, 1, kernel_size=8, stride=4, padding=0),
+            nn.ReLU(),
+            nn.Conv2d(1, 1, kernel_size=8, stride=4, padding=0),
+            nn.ReLU(),
+            nn.Flatten(),
+        )
+
+        # Compute shape by doing one forward pass
+        with T.no_grad():
+            n_flatten = self.cnn(
+                T.zeros(1, 1, 1206, 1476).float()
+            ).shape[1]
+
+        self.fc1 = nn.Linear(n_flatten, self.fc1_dims)
+        f1 = 1. / np.sqrt(self.fc1.weight.data.size()[0])
         T.nn.init.uniform_(self.fc1.weight.data, -f1, f1)
         T.nn.init.uniform_(self.fc1.bias.data, -f1, f1)
-        #self.fc1.weight.data.uniform_(-f1, f1)
-        #self.fc1.bias.data.uniform_(-f1, f1)
+        # self.fc1.weight.data.uniform_(-f1, f1)
+        # self.fc1.bias.data.uniform_(-f1, f1)
         self.bn1 = nn.LayerNorm(self.fc1_dims)
 
         # self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
@@ -194,13 +204,8 @@ class ActorNetwork(nn.Module):
 
         self.to(self.device)
 
-    def forward(self, prompt):
-        encodings = self.tokenizer(prompt, max_length=512, padding=True, truncation=True, return_tensors="pt")
-        input_ids = encodings['input_ids'].to(self.device)
-        attention_masks = encodings['attention_mask'].to(self.device)
-        outputs = self.transformer(input_ids, attention_mask=attention_masks, output_hidden_states=True)
-        last_hidden_states = outputs.last_hidden_state
-        x = last_hidden_states[:, 0, :]  # Taking the [CLS] token's representation
+    def forward(self, state):
+        x = self.cnn(state)
         x = self.fc1(x)
         x = self.bn1(x)
         x = F.relu(x)
@@ -219,7 +224,7 @@ class ActorNetwork(nn.Module):
         print('... loading checkpoint ...')
         self.load_state_dict(T.load(self.checkpoint_file))
 
-class Agent(object):
+class CNN_Agent(object):
     def __init__(self, model_name, alpha, beta, input_dims, tau, env, gamma=0.99,
                  n_actions=2, max_size=1000, layer1_size=400,
                  layer2_size=300, batch_size=64):
@@ -247,10 +252,10 @@ class Agent(object):
 
         self.update_network_parameters(tau=1)
 
-    def choose_action(self, prompt):
+    def choose_action(self, state, prompt):
         self.actor.eval()
         # prompt = T.tensor(prompt, dtype=T.float).to(self.actor.device)
-        mu = self.actor.forward(prompt).to(self.actor.device)
+        mu = self.actor.forward(state).to(self.actor.device)
         mu_prime = mu + T.tensor(self.noise(),
                                  dtype=T.float).to(self.actor.device)
         self.actor.train()
@@ -274,7 +279,7 @@ class Agent(object):
         self.target_actor.eval()
         self.target_critic.eval()
         self.critic.eval()
-        target_actions = self.target_actor.forward(new_prompt)
+        target_actions = self.target_actor.forward(new_state)
         critic_value_ = self.target_critic.forward(new_state, target_actions)
         critic_value = self.critic.forward(state, action)
 
@@ -292,7 +297,7 @@ class Agent(object):
 
         self.critic.eval()
         self.actor.optimizer.zero_grad()
-        mu = self.actor.forward(prompt)
+        mu = self.actor.forward(state)
         self.actor.train()
         actor_loss = -self.critic.forward(state, mu)
         actor_loss = T.mean(actor_loss)

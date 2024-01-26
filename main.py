@@ -1,7 +1,13 @@
+import os,sys
+
+sys.path.insert(1, r'C:\Users\nurullahsevim\OneDrive - Texas A&M University\Desktop\research\RLHF\ddpg')
 from generate_data import MyDataset
 from datasets import Dataset
 from datasets import IterableDataset
 import torch
+from ddpg_torch_llm import LLM_Agent
+from ddpg_torch_cnn import CNN_Agent
+from ddpg_torch_llmandcnn import LLMandCNN_Agent
 import matplotlib.pyplot as plt
 from model import LLM
 from transformers import T5Tokenizer, T5ForConditionalGeneration, AutoTokenizer
@@ -11,9 +17,73 @@ import torch.nn as nn
 import numpy as np
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
-import os,sys
-from wireless_torch import LOS_Env
+from sionna_env_gym import sionna_env
 from transformers import AutoModelForSequenceClassification
+
+
+def train(agent_type,log_dir,episode_length=1500,rng=42,visualize=True):
+
+
+
+
+    if agent_type=='llm':
+        agent = LLM_Agent(model_name, alpha=0.0005, beta=0.005, input_dims=[1, 1206, 1476], tau=0.001, env=None,
+                              batch_size=8, layer1_size=256, layer2_size=128, n_actions=6)
+    elif agent_type=='cnn':
+        agent = CNN_Agent(model_name, alpha=0.0005, beta=0.005, input_dims=[1, 1206, 1476], tau=0.001, env=None,
+                              batch_size=8, layer1_size=256, layer2_size=128, n_actions=6)
+    else:
+        agent = LLMandCNN_Agent(model_name, alpha=0.0005, beta=0.005, input_dims=[1, 1206, 1476], tau=0.001,
+                                         env=None, batch_size=8, layer1_size=256, layer2_size=128, n_actions=6)
+
+    log_dir = os.path.join(log_dir, agent_type)
+    if not os.path.exists(log_dir):
+        os.mkdir(log_dir)
+
+    rewards_dir = os.path.join(log_dir,'rewards')
+    if not os.path.exists(rewards_dir):
+        os.mkdir(rewards_dir)
+
+
+    if visualize:
+        figs_dir = os.path.join(log_dir,'figs')
+        if not os.path.exists(figs_dir):
+            os.mkdir(figs_dir)
+
+
+        figs_dir = os.path.join(figs_dir, str(rng))
+        if not os.path.exists(figs_dir):
+            os.mkdir(figs_dir)
+
+    env = sionna_env(16,rng=rng)
+
+    rewards = []
+
+    for step_num in range(episode_length):
+        prompt = env.get_prompt()
+        obs = env.get_cm_db()/400
+        obs_frw = torch.tensor(obs, dtype=torch.float).to(device)
+        action = agent.choose_action(obs_frw,prompt)
+        yaw = action[3]*180
+        pitch = action[4]*90
+        roll = action[5]*180
+        env.initialize_transmitter(action[:2]*500,action[-2]*50+70,(yaw,pitch,roll))
+        new_prompt = env.get_prompt()
+        obs_ = env.get_cm_db()/400
+        rssi = env.get_rssi()
+        reward = np.mean(rssi)/40
+        rewards.append(reward)
+        agent.remember(obs, prompt, action, reward, obs_,new_prompt,False)
+        if visualize:
+            env.visualize(figs_dir,step_num)
+        agent.learn()
+        plt.plot(rewards)
+        plt.savefig(rewards_dir + f"/rewards"+str(rng)+".png", dpi=300)
+        plt.close()
+
+    rewards = np.array(rewards)
+    np.save(rewards_dir + f"/rewards"+str(rng)+".png",rewards)
+
 
 
 
@@ -27,98 +97,30 @@ if __name__ == '__main__':
         print("CUDA is not available. Using CPU instead.")
         device = torch.device("cpu")
     model_name = 'distilbert-base-uncased' #'bert-base-uncased' #"google/flan-t5-base"
-    # model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2)
-    model = LLM(model_name,2)
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    episode_length = 1500
+    total_episodes = 1
+    test_eps = 5
 
-    model = model.to(device)
-
-
-    optimizer = AdamW(model.parameters(), lr=3e-5)
-    episode_length = 4
-    total_episodes = 300
-    test_eps = 100
+    rngs = [5,13,78,167,357]
 
     log_dir = f'../logs'
     if not os.path.exists(log_dir):
         os.mkdir(log_dir)
 
-    log_dir = f'../logs/{model_name}'
+    log_dir = f'../logs/ddpg'
     if not os.path.exists(log_dir):
         os.mkdir(log_dir)
 
-    model_checkpoint_dir = os.path.join(log_dir, 'checkpoints')
-    if not os.path.exists(model_checkpoint_dir):
-        os.mkdir(model_checkpoint_dir)
+    log_dir = f'../logs/ddpg/{model_name}'
+    if not os.path.exists(log_dir):
+        os.mkdir(log_dir)
 
-    figs_dir = os.path.join(log_dir, 'figs/run18')
-    if not os.path.exists(figs_dir):
-        os.makedirs(figs_dir)
+    log_dir = f'../logs/ddpg/{model_name}/run51'
+    if not os.path.exists(log_dir):
+        os.mkdir(log_dir)
 
-    trainfigs_dir = os.path.join(figs_dir, 'train')
-    if not os.path.exists(trainfigs_dir):
-        os.makedirs(trainfigs_dir)
+    for rng in rngs:
+        train('llm' ,log_dir, episode_length=10, rng=rng, visualize=True)
+        train('cnn',log_dir,  episode_length=10, rng=rng, visualize=True)
+        train('combined',log_dir,  episode_length=10, rng=rng, visualize=True)
 
-    testfigs_dir = os.path.join(figs_dir, 'test')
-    if not os.path.exists(testfigs_dir):
-        os.makedirs(testfigs_dir)
-
-    def loss_fn(env,output):
-        loc = 500*output.squeeze()
-        # loc = output.squeeze()
-        loc = torch.cat((loc,torch.tensor([50]).to(loc.device)))
-        env.initialize_transmitter(loc)
-        rssi = env.get_rssi()
-        return -torch.sum(rssi)/env.n_receivers
-
-    def eval(model, test_eps):
-        for episode in tqdm(range(test_eps)):
-            model.eval()
-            mean = np.random.uniform(low=-250, high=250)
-            env = LOS_Env(16, mean,device)
-            prompt = env.get_prompt()
-            # labels = torch.tensor(labels, dtype=torch.float32)
-            # labels = labels.to(device)
-            # Forward pass
-            pred = model(prompt)
-            loss = loss_fn(env, pred)
-            env.visualize(os.path.join(testfigs_dir), episode)
-
-    # Training loop
-    reward_var = []
-    for episode in range(total_episodes):
-
-        if not os.path.exists(os.path.join(trainfigs_dir,f'{episode}')):
-            os.mkdir(os.path.join(trainfigs_dir,f'{episode}'))
-
-        model.train()
-        total_loss = 0
-        mean = np.random.uniform(low=-250,high=250)
-        env = LOS_Env(16,mean,device)
-        episode_rewards = np.zeros((0,))
-        for step_num  in tqdm(range(episode_length)):
-            prompt = env.get_prompt()
-            # labels = torch.tensor(labels, dtype=torch.float32)
-            # labels = labels.to(device)
-            # Forward pass
-            pred = model(prompt)
-            loss = loss_fn(env,pred)
-            env.visualize(os.path.join(trainfigs_dir,f'{episode}'),step_num)
-            # Backward pass
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-
-            episode_rewards = np.append(episode_rewards, -loss.to("cpu").detach().numpy())
-
-        reward_var.append(np.var(episode_rewards))
-        print("Episode:", episode, "Initial Reward: ",episode_rewards[0], "Last Reward:", episode_rewards[-1])
-    plt.plot(reward_var)
-    plt.savefig(trainfigs_dir+f"/vars.png", dpi=300)
-    plt.close()
-    torch.save(model.state_dict(), os.path.join(model_checkpoint_dir, 'pytorch_model.bin'))
-    torch.save(optimizer.state_dict(), os.path.join(model_checkpoint_dir, 'optimizer.pt'))
-    tokenizer.save_vocabulary(model_checkpoint_dir)
-
-    # model.load_state_dict(torch.load(os.path.join(model_checkpoint_dir, 'pytorch_model.bin')))
-    eval(model,test_eps)
