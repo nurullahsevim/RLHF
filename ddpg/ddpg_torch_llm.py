@@ -8,7 +8,8 @@ from transformers import AutoModel, AutoConfig, AutoTokenizer
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 
 class OUActionNoise(object):
-    def __init__(self, mu, sigma=0.15, theta=.2, dt=1e-2, x0=None):
+    def __init__(self, mu, sigma=0.15, theta=.2, dt=1e-2, x0=None,rng=42):
+        np.random.seed(rng)
         self.theta = theta
         self.mu = mu
         self.sigma = sigma
@@ -222,7 +223,7 @@ class ActorNetwork(nn.Module):
 class LLM_Agent(object):
     def __init__(self, model_name, alpha, beta, input_dims, tau, env, gamma=0.99,
                  n_actions=2, max_size=1000, layer1_size=400,
-                 layer2_size=300, batch_size=64):
+                 layer2_size=300, batch_size=64,rng=42):
         self.gamma = gamma
         self.tau = tau
         self.memory = ReplayBuffer(max_size, input_dims, n_actions)
@@ -243,7 +244,7 @@ class LLM_Agent(object):
                                            layer2_size, n_actions=n_actions,
                                            name='TargetCritic')
 
-        self.noise = OUActionNoise(mu=np.zeros(n_actions))
+        self.noise = OUActionNoise(mu=np.zeros(n_actions),rng=rng)
 
         self.update_network_parameters(tau=1)
 

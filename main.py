@@ -28,13 +28,13 @@ def train(agent_type,log_dir,episode_length=1500,rng=42,visualize=True):
 
     if agent_type=='llm':
         agent = LLM_Agent(model_name, alpha=0.0005, beta=0.005, input_dims=[1, 1206, 1476], tau=0.001, env=None,
-                              batch_size=8, layer1_size=256, layer2_size=128, n_actions=6)
+                              batch_size=8, layer1_size=256, layer2_size=128, n_actions=6,rng=rng)
     elif agent_type=='cnn':
         agent = CNN_Agent(model_name, alpha=0.0005, beta=0.005, input_dims=[1, 1206, 1476], tau=0.001, env=None,
-                              batch_size=8, layer1_size=256, layer2_size=128, n_actions=6)
+                              batch_size=8, layer1_size=256, layer2_size=128, n_actions=6,rng=rng)
     else:
         agent = LLMandCNN_Agent(model_name, alpha=0.0005, beta=0.005, input_dims=[1, 1206, 1476], tau=0.001,
-                                         env=None, batch_size=8, layer1_size=256, layer2_size=128, n_actions=6)
+                                         env=None, batch_size=8, layer1_size=256, layer2_size=128, n_actions=6,rng=rng)
 
     log_dir = os.path.join(log_dir, agent_type)
     if not os.path.exists(log_dir):
@@ -55,7 +55,7 @@ def train(agent_type,log_dir,episode_length=1500,rng=42,visualize=True):
         if not os.path.exists(figs_dir):
             os.mkdir(figs_dir)
 
-    env = sionna_env(16,rng=rng)
+    env = sionna_env(16)
 
     rewards = []
 
@@ -120,7 +120,7 @@ if __name__ == '__main__':
         os.mkdir(log_dir)
 
     for rng in rngs:
-        train('llm' ,log_dir, episode_length=10, rng=rng, visualize=True)
-        train('cnn',log_dir,  episode_length=10, rng=rng, visualize=True)
-        train('combined',log_dir,  episode_length=10, rng=rng, visualize=True)
+        train('llm' ,log_dir, episode_length=episode_length, rng=rng, visualize=True)
+        train('cnn',log_dir,  episode_length=episode_length, rng=rng, visualize=True)
+        train('combined',log_dir,  episode_length=episode_length, rng=rng, visualize=True)
 

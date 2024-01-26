@@ -87,20 +87,6 @@ class sionna_env(gym.Env):
 
         cm_db = 10. * log10(self.cm._value[0, :, :])
 
-
-        dens_poses1 = [
-            [740, 800],
-            [750, 810],
-            [760, 820],
-            [770, 830],
-            [780, 840],
-            [740, 850],
-            [750, 860],
-            [760, 870],
-            [770, 880],
-            [750, 840]
-        ]
-
         dens_poses2 = [
             [880, 940],
             [880, 950],
@@ -127,11 +113,17 @@ class sionna_env(gym.Env):
             (360, 610),
         ]
 
-        idx = tf.where(tf.math.logical_and(cm_db > -400,
-                                           cm_db < 0))
-        # Randomly permute indices
-        idx = tf.random.shuffle(idx,seed=self.rng)
-        self.rx_idx = idx[:N - 10].numpy().tolist() + dens_poses3
+        rnd_poses = [
+            (677,564),
+            (53, 723),
+            (797,  783),
+            (332,  874),
+            (529, 1276),
+            (460,  640)
+        ]
+
+
+        self.rx_idx = rnd_poses + dens_poses3
 
 
         # Sample batch_size random positions
@@ -240,9 +232,10 @@ class sionna_env(gym.Env):
 if __name__ == "__main__":
     env = sionna_env(16)
     prompt = env.get_prompt()
-    tokenizer = AutoTokenizer.from_pretrained('distilbert-base-uncased')
+    env.visualize('./',0)
+    # tokenizer = AutoTokenizer.from_pretrained('distilbert-base-uncased')
     # encodings = tokenizer(prompt, max_length=512, padding=True, truncation=True, return_tensors="pt")
-    encodings = tokenizer(prompt, return_tensors="pt")
+    # encodings = tokenizer(prompt, return_tensors="pt")
 
     print(prompt)
     # rssi = env.get_rssi()
