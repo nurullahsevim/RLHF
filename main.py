@@ -59,7 +59,7 @@ def train(agent_type,log_dir,episode_length=1500,rng=42,visualize=True):
 
     rewards = []
 
-    for step_num in range(episode_length):
+    for step_num in tqdm(range(episode_length)):
         prompt = env.get_prompt()
         obs = env.get_cm_db()/400
         obs_frw = torch.tensor(obs, dtype=torch.float).to(device)
@@ -82,7 +82,7 @@ def train(agent_type,log_dir,episode_length=1500,rng=42,visualize=True):
         plt.close()
 
     rewards = np.array(rewards)
-    np.save(rewards_dir + f"/rewards"+str(rng)+".png",rewards)
+    np.save(rewards_dir + f"/rewards"+str(rng)+".npy",rewards)
 
 
 
@@ -119,8 +119,8 @@ if __name__ == '__main__':
     if not os.path.exists(log_dir):
         os.mkdir(log_dir)
 
-    for rng in rngs:
-        train('llm' ,log_dir, episode_length=episode_length, rng=rng, visualize=True)
-        train('cnn',log_dir,  episode_length=episode_length, rng=rng, visualize=True)
-        train('combined',log_dir,  episode_length=episode_length, rng=rng, visualize=True)
+    for rng in range(5):
+        train('llm' ,log_dir, episode_length=episode_length, rng=rng, visualize=False)
+        train('cnn',log_dir,  episode_length=episode_length, rng=rng, visualize=False)
+        train('combined',log_dir,  episode_length=episode_length, rng=rng, visualize=False)
 

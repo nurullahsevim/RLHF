@@ -9,7 +9,6 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 
 class OUActionNoise(object):
     def __init__(self, mu, sigma=0.15, theta=.2, dt=1e-2, x0=None,rng=42):
-        np.random.seed(rng)
         self.theta = theta
         self.mu = mu
         self.sigma = sigma
