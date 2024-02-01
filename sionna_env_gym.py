@@ -87,33 +87,36 @@ class sionna_env(gym.Env):
 
         cm_db = 10. * log10(self.cm._value[0, :, :])
 
-        dens_poses2 = [
-            [880, 940],
-            [880, 950],
-            [880, 960],
-            [880, 970],
-            [880, 980],
-            [900, 940],
-            [900, 950],
-            [900, 960],
-            [900, 970],
-            [900, 980]
+
+        # Case-2
+        # self.dens_poses = [
+        #     [913, 1008],
+        #     [889, 962],
+        #     [896, 954],
+        #     [903, 990],
+        #     [872, 999],
+        #     [899, 974],
+        #     [878, 979],
+        #     [890, 952],
+        #     [886, 969],
+        #     [880, 992]
+        # ]
+
+        # Case-1
+        self.dens_poses = [
+            (377, 612),
+            (365, 573),
+            (348, 581),
+            (352, 584),
+            (339, 585),
+            (331, 566),
+            (370, 613),
+            (338, 588),
+            (340, 612),
+            (336, 599),
         ]
 
-        dens_poses3 = [
-            (380, 550),
-            (380, 565),
-            (380, 580),
-            (380, 595),
-            (380, 610),
-            (360, 550),
-            (360, 565),
-            (360, 580),
-            (360, 595),
-            (360, 610),
-        ]
-
-        rnd_poses = [
+        self.rnd_poses = [
             (942,842),
             (621,  681),
             (731,  100),
@@ -123,15 +126,20 @@ class sionna_env(gym.Env):
         ]
 
 
-        self.rx_idx = rnd_poses + dens_poses3
-
 
         # Sample batch_size random positions
-        self.ue_pos = tf.gather_nd(self.cm.cell_centers, self.rx_idx)
+        self.ue_pos_dens = tf.gather_nd(self.cm.cell_centers, self.dens_poses)
+        self.ue_pos_rnd = tf.gather_nd(self.cm.cell_centers, self.rnd_poses)
 
-        for i in range(N):
-            rx = Receiver(name=f"rx-{i}",
-                          position=self.ue_pos[i],  # Random position sampled from coverage map
+        for i in range(len(self.ue_pos_dens)):
+            rx = Receiver(name=f"rx-{i}-dens",
+                          position=self.ue_pos_dens[i],  # Random position sampled from coverage map
+                          color=[0, 0, 1])
+            self.scene.add(rx)
+
+        for i in range(len(self.ue_pos_rnd)):
+            rx = Receiver(name=f"rx-{i}-rnd",
+                          position=self.ue_pos_rnd[i],  # Random position sampled from coverage map
                           color=[1, 0, 0])
             self.scene.add(rx)
 
@@ -170,7 +178,7 @@ class sionna_env(gym.Env):
     def get_rssi(self):
         cm_db = 10. * log10(self.cm._value[0, :, :])
         cm_db = tf.where(cm_db < -400, -400, cm_db)
-        rssi = tf.gather_nd(cm_db, self.rx_idx)
+        rssi = tf.gather_nd(cm_db, self.dens_poses+self.rnd_poses)
         return rssi.numpy().astype(np.float32)
 
     def get_cm_db(self):
@@ -179,13 +187,24 @@ class sionna_env(gym.Env):
         return cm_db.numpy().astype(np.float32)
 
     def get_prompt(self):
-        locations = self.ue_pos
-        idxs = self.rx_idx
+        locations = tf.concat([self.ue_pos_dens,self.ue_pos_rnd],0)
+        idxs = self.dens_poses + self.rnd_poses
         cm_db = self.get_cm_db()[0]
         prompt = ""
         for i, loc in enumerate(locations):
             prompt += f"User at location ({locations[i, 0]:.2f},{locations[i, 1]:.2f},{locations[i, 2]:.2f}) gets {cm_db[tuple(idxs[i])]:.2f} dB signal power, "
-        prompt+="Optimize the received signal power for all users."
+        prompt+="Maximize the received signal power for all users."
+        return prompt
+
+    def get_prompt_neg(self):
+        cm_db = self.get_cm_db()[0]
+        prompt = ""
+        for i, loc in enumerate(self.dens_poses):
+            prompt += f"User at location ({self.ue_pos_dens[i, 0]:.2f},{self.ue_pos_dens[i, 1]:.2f},{self.ue_pos_dens[i, 2]:.2f}) gets {cm_db[tuple(loc)]:.2f} dB signal power, "
+
+        for i, loc in enumerate(self.rnd_poses):
+            prompt += f"User at location ({self.ue_pos_rnd[i, 0]:.2f},{self.ue_pos_rnd[i, 1]:.2f},{self.ue_pos_rnd[i, 2]:.2f}) gets {cm_db[tuple(loc)]:.2f} dB signal power, "
+        prompt += "Maximize the received signal power for the following first 10 users while minimizing the received signal for the last 6 users."
         return prompt
 
     def reset(self, seed=None, options=None):
@@ -231,13 +250,13 @@ class sionna_env(gym.Env):
 
 if __name__ == "__main__":
     env = sionna_env(16)
-    prompt = env.get_prompt()
-    env.visualize('./',0)
+    print(env.get_prompt())
+    print(env.get_prompt_neg())
+    # env.visualize('./',0)
     # tokenizer = AutoTokenizer.from_pretrained('distilbert-base-uncased')
     # encodings = tokenizer(prompt, max_length=512, padding=True, truncation=True, return_tensors="pt")
     # encodings = tokenizer(prompt, return_tensors="pt")
 
-    print(prompt)
     # rssi = env.get_rssi()
     # check_env(env, warn=True)
     # policy_kwargs = dict(

@@ -1,6 +1,6 @@
 import os,sys
 
-sys.path.insert(1, r'C:\Users\nurullahsevim\OneDrive - Texas A&M University\Desktop\research\RLHF\ddpg')
+sys.path.insert(1, r'C:\Users\Nurullah\Desktop\TAMU\Research\RLHF\ddpg')
 from generate_data import MyDataset
 from datasets import Dataset
 from datasets import IterableDataset
@@ -40,6 +40,8 @@ def train(agent_type,log_dir,episode_length=1500,rng=42,visualize=True):
     if not os.path.exists(log_dir):
         os.mkdir(log_dir)
 
+    log_file = open(os.path.join(log_dir, 'log.txt'),'w')
+
     rewards_dir = os.path.join(log_dir,'rewards')
     if not os.path.exists(rewards_dir):
         os.mkdir(rewards_dir)
@@ -60,7 +62,7 @@ def train(agent_type,log_dir,episode_length=1500,rng=42,visualize=True):
     rewards = []
 
     for step_num in tqdm(range(episode_length)):
-        prompt = env.get_prompt()
+        prompt = env.get_prompt_neg()
         obs = env.get_cm_db()/400
         obs_frw = torch.tensor(obs, dtype=torch.float).to(device)
         action = agent.choose_action(obs_frw,prompt)
@@ -68,12 +70,16 @@ def train(agent_type,log_dir,episode_length=1500,rng=42,visualize=True):
         pitch = action[4]*90
         roll = action[5]*180
         env.initialize_transmitter(action[:2]*500,action[-2]*50+70,(yaw,pitch,roll))
-        new_prompt = env.get_prompt()
+        new_prompt = env.get_prompt_neg()
         obs_ = env.get_cm_db()/400
         rssi = env.get_rssi()
-        reward = np.mean(rssi)/40
+        reward = np.mean(rssi[:10])/40 - np.mean(rssi[10:])/40
         rewards.append(reward)
         agent.remember(obs, prompt, action, reward, obs_,new_prompt,False)
+        log_file.write("Step "+str(step_num)+":\n")
+        log_file.write(f"\t Action: pos = ({action[0]*500:.2f},{action[1]*500:.2f},{action[2]*50+70:.2f}) orientation=({yaw:.2f},{pitch:.2f},{roll:.2f})\n")
+        log_file.write(f"\t Reward: {reward:.2f}\n")
+        log_file.flush()
         if visualize:
             env.visualize(figs_dir,step_num)
         agent.learn()
@@ -81,6 +87,7 @@ def train(agent_type,log_dir,episode_length=1500,rng=42,visualize=True):
         plt.savefig(rewards_dir + f"/rewards"+str(rng)+".png", dpi=300)
         plt.close()
 
+    log_file.close()
     rewards = np.array(rewards)
     np.save(rewards_dir + f"/rewards"+str(rng)+".npy",rewards)
 
@@ -115,12 +122,12 @@ if __name__ == '__main__':
     if not os.path.exists(log_dir):
         os.mkdir(log_dir)
 
-    log_dir = f'../logs/ddpg/{model_name}/run51'
+    log_dir = f'../logs/ddpg/{model_name}/run55'
     if not os.path.exists(log_dir):
         os.mkdir(log_dir)
 
     for rng in range(5):
-        train('llm' ,log_dir, episode_length=episode_length, rng=rng, visualize=False)
+        train('llm' ,log_dir, episode_length=episode_length, rng=rng, visualize=True)
         train('cnn',log_dir,  episode_length=episode_length, rng=rng, visualize=False)
         train('combined',log_dir,  episode_length=episode_length, rng=rng, visualize=False)
 
